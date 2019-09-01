@@ -1,0 +1,23 @@
+app:
+  tsudb:
+    import-source: file
+    path: path
+    current-season: 2019 - 2020
+# ===============================
+# DB CONNECTION
+# ===============================
+spring.datasource.url: jdbc:postgresql://localhost:5432/reshedule-tsu
+spring.datasource.username: postgres
+spring.datasource.password: Ofss57ArFFNAZfNL9cWO
+# ===============================
+# JPA / HIBERNATE
+# ===============================
+spring.jpa.show-sql: true
+spring.jpa.hibernate.ddl-auto: update
+spring.jpa.properties.hibernate.default_schema: public
+spring.jpa.properties.hibernate.current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
+spring.jpa.properties.hibernate.temp.use_jdbc_metadata_defaults: false
+# ===============================
+# SPRING ACTUATOR
+# ===============================
+management.endpoints.web.exposure.include: "*"
