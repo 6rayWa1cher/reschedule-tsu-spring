@@ -2,11 +2,13 @@ package com.a6raywa1cher.rescheduletsuspring.dao.impl;
 
 import com.a6raywa1cher.rescheduletsuspring.dao.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.dao.repository.LessonCellRepository;
+import com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -21,6 +23,16 @@ public class LessonCellServiceImpl implements LessonCellService {
 	@Override
 	public Set<LessonCell> getAll() {
 		return repository.getAllBy();
+	}
+
+	@Override
+	public List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups() {
+		return repository.findGroupsAndSubgroups();
+	}
+
+	@Override
+	public List<LessonCell> getAllByGroup(String group) {
+		return repository.getAllByGroup(group);
 	}
 
 	@Override

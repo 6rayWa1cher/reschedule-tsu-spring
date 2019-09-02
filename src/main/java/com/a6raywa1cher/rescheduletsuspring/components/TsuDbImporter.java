@@ -58,10 +58,12 @@ public class TsuDbImporter {
 		return output;
 	}
 
+	@SuppressWarnings("DuplicatedCode")
 	public void importExternalModels() {
 		ObjectMapper objectMapper = new ObjectMapper()
 				.registerModule(new Jdk8Module())
 				.registerModule(new JavaTimeModule());
+		// Step 1: load all seasons
 		String allSeasonsRaw = strategy.load("timetables");
 		List<Season> seasons;
 		try {
@@ -71,9 +73,12 @@ public class TsuDbImporter {
 			log.error("Decoding error", e);
 			return;
 		}
+		// we don't care about old data
 		List<Season> filteredSeasons = seasons.stream()
 				.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
 				.collect(Collectors.toList());
+		// Step 2: find all @IdExternal (id's in Season children to some objects in external db)
+		// and fill fields with data from strategy
 		Stack<Object> stack = new Stack<>();
 		stack.addAll(filteredSeasons);
 		int counter = 0;
@@ -83,7 +88,7 @@ public class TsuDbImporter {
 			if (o == null) continue;
 			Class<?> clazz = o.getClass();
 
-			// step 1: fill data from external ids (load from strategy)
+			// Step 2.1: fill data from external ids (load from strategy)
 			Set<PropertyInfo<IdExternal>> annotated = findAnnotatedWithIdExternal(clazz);
 			for (PropertyInfo<IdExternal> pi : annotated) {
 				try {
@@ -97,8 +102,8 @@ public class TsuDbImporter {
 					log.error("Data injection error", e);
 				}
 			}
-			if (counter % 100 == 0) log.info("counter:{} class:{}", counter, clazz.toString());
-			// step 2: find next objects (invoke all getters to external models)
+			if (counter % 100 == 0) log.debug("counter:{} class:{}", counter, clazz.toString());
+			// Step 2.2: find next objects (invoke all getters to external models from 'externalmodels' module)
 			for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(o.getClass())) {
 				Class<?> returnClazz = propertyDescriptor.getPropertyType();
 				if (returnClazz.getModule().equals(o.getClass().getModule())) {
@@ -110,14 +115,17 @@ public class TsuDbImporter {
 				} else if (Collection.class.isAssignableFrom(returnClazz)) {
 					try {
 						Collection<?> collection = (Collection<?>) propertyDescriptor.getReadMethod().invoke(o);
-						Object anyObject = collection.size() > 0 ? collection.iterator().next() : "";
-						if (anyObject == null) continue;
-						if (anyObject.getClass().getModule().equals(o.getClass().getModule()))
-							stack.addAll(collection.stream().filter(obj -> {
-								Class<?> c = obj.getClass();
-								return c.getModule().equals(o.getClass().getModule()) ||
-										Collection.class.isAssignableFrom(returnClazz);
-							}).collect(Collectors.toList()));
+						// we have to check, what class is in collection (assumption that all have same class)
+//						Object anyObject = collection.size() > 0 ? collection.iterator().next() : "";
+//						if (anyObject == null) continue;
+						// there's no double collections in externalmodels, so checking only module
+//						if (anyObject.getClass().getModule().equals(o.getClass().getModule()))
+						stack.addAll(collection.stream().filter(obj -> {
+							if (obj == null) return false;
+							Class<?> c = obj.getClass();
+							return c.getModule().equals(o.getClass().getModule()) ||
+									Collection.class.isAssignableFrom(returnClazz);
+						}).collect(Collectors.toList()));
 					} catch (IllegalAccessException | InvocationTargetException e) {
 						log.error("Getter invokation error (collection)", e);
 					}
@@ -125,6 +133,7 @@ public class TsuDbImporter {
 			}
 		}
 		log.info("Imported {} items", counter);
+		// Step 3: convert data to LessonCell
 		Set<LessonCell> preparedCells = new HashSet<>();
 		for (Season season : filteredSeasons) {
 			for (Timetable timetable : season.getTables()) {
@@ -143,6 +152,9 @@ public class TsuDbImporter {
 								lessonCell.setWeek(Week.ANY);
 								break;
 						}
+						// exists lessons, which contains only comment or nothing.
+						// if comment provided, use it as subject
+						// else drop this lesson
 						if (lesson.getSubjectObj() != null) {
 							lessonCell.setFullSubjectName(lesson.getSubjectObj().getName());
 							lessonCell.setShortSubjectName(lesson.getSubjectObj().getAbbr());
@@ -162,7 +174,7 @@ public class TsuDbImporter {
 						lessonCell.setColumnPosition(cell.getNumber());
 						String rawTime = timetable.getTimeSchedule().getSchedule().get(cell.getNumber());
 						String startTime = rawTime.split("-")[0];
-						if (startTime.length() != 5) {
+						if (startTime.length() != 5) { // 8:30 -> 08:30
 							startTime = "0" + startTime;
 						}
 						String endTime = rawTime.split("-")[1];
@@ -175,6 +187,7 @@ public class TsuDbImporter {
 						lessonCell.setSubgroup(lesson.getSubgroup());
 						lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
 						lessonCell.setFaculty(season.get_id().getFaculty().getAbbr());
+						// drop empty lessons
 						if (lessonCell.getFullSubjectName() == null && lessonCell.getShortSubjectName() == null) {
 							continue;
 						}
@@ -183,16 +196,20 @@ public class TsuDbImporter {
 				}
 			}
 		}
-		Set<LessonCell> allCells = lessonCellService.getAll();
-		Map<String, LessonCell> idToCellInDb = allCells.parallelStream()
+		// Step 4: update local db
+		// if new LessonCell, save it
+		// if updated LessonCell (db contains entity with same id), update it
+		// if LessonCell from local db hasn't double from external id, delete it
+		Set<LessonCell> allCellsInDb = lessonCellService.getAll();
+		Map<String, LessonCell> idToCellInDb = allCellsInDb.stream()
 				.collect(Collectors.toMap(LessonCell::getExternalId, Function.identity()));
-		// update existing
+		// catch updated LessonCells
 		Set<LessonCell> intersection = preparedCells.stream()
 				.filter(lessonCell -> idToCellInDb.containsKey(lessonCell.getExternalId()))
 				.collect(Collectors.toSet());
 		Set<LessonCell> toPull = new HashSet<>();
 		Set<LessonCell> remainingPreparedCells = new HashSet<>(preparedCells);
-		Set<LessonCell> remainingDbCells = new HashSet<>(allCells);
+		Set<LessonCell> remainingDbCells = new HashSet<>(allCellsInDb);
 		for (LessonCell preparedCell : intersection) {
 			LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
 			remainingDbCells.remove(inDb);
@@ -216,7 +233,7 @@ public class TsuDbImporter {
 		lessonCellService.saveAll(toPull);
 		lessonCellService.saveAll(remainingPreparedCells);
 		lessonCellService.deleteAll(remainingDbCells);
-		log.info("Transferring TsuDb data to local db completed");
+		log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", remainingPreparedCells.size(), toPull.size(), remainingDbCells.size());
 	}
 
 	@Data
