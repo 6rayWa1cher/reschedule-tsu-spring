@@ -1,14 +1,17 @@
 app:
   tsudb:
-    import-source: file
-    path: path
+    import-source: network
+    path: path-to-server
+    cache-path: path-to-dir
     current-season: 2019 - 2020
+    cron: 0/5 * * ? * *
+  admin-token: eqnfoiwehojJSQ
 # ===============================
 # DB CONNECTION
 # ===============================
-spring.datasource.url: jdbc:postgresql://localhost:5432/reshedule-tsu
+spring.datasource.url: jdbc:postgresql://localhost:5433/reschedule-tsu
 spring.datasource.username: postgres
-spring.datasource.password: Ofss57ArFFNAZfNL9cWO
+spring.datasource.password: postgres
 # ===============================
 # JPA / HIBERNATE
 # ===============================

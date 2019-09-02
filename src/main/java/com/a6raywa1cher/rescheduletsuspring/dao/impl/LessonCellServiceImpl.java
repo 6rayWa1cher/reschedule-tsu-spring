@@ -26,13 +26,18 @@ public class LessonCellServiceImpl implements LessonCellService {
 	}
 
 	@Override
-	public List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups() {
-		return repository.findGroupsAndSubgroups();
+	public List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups(String faculty) {
+		return repository.findGroupsAndSubgroups(faculty);
 	}
 
 	@Override
-	public List<LessonCell> getAllByGroup(String group) {
-		return repository.getAllByGroup(group);
+	public List<String> getAllFaculties() {
+		return repository.getAllFaculties();
+	}
+
+	@Override
+	public List<LessonCell> getAllByGroup(String group, String faculty) {
+		return repository.getAllByGroupAndFaculty(group, faculty);
 	}
 
 	@Override

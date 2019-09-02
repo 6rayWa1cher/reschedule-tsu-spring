@@ -16,12 +16,24 @@ public class TsuDbImporterConfigProperties {
 	@NotBlank
 	private String path;
 	/**
-	 * Import source strategy (file or server)
+	 * Import source strategy (file or network)
 	 */
 	@NotBlank
-	@Pattern(regexp = "(file|server)")
+	@Pattern(regexp = "(file|network)")
 	private String importSource;
+	/**
+	 * Path to cache (empty if chosen file strategy)
+	 */
+	private String cachePath;
 
+	/**
+	 * Delay for importer
+	 */
+	private String cron;
+
+	/**
+	 * Filter for seasons
+	 */
 	@NotBlank
 	private String currentSeason;
 }

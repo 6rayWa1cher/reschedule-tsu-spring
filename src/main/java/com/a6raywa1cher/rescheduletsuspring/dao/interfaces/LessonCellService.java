@@ -10,9 +10,11 @@ import java.util.Set;
 public interface LessonCellService {
 	Set<LessonCell> getAll();
 
-	List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups();
+	List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups(String faculty);
 
-	List<LessonCell> getAllByGroup(String group);
+	List<String> getAllFaculties();
+
+	List<LessonCell> getAllByGroup(String group, String faculty);
 
 	Iterable<LessonCell> saveAll(Collection<LessonCell> collection);
 

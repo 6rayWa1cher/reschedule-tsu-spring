@@ -15,7 +15,7 @@ public class FileImportStrategy implements ImportStrategy {
 	}
 
 	@Override
-	public String load(String path) {
+	public String load(String path, boolean overrideCache) throws IOException {
 		try (FileInputStream stream = new FileInputStream(Path.of(properties.getPath(), path).toFile())) {
 			byte[] bytes = stream.readAllBytes();
 			if (new String(bytes).contains("\ufffd")) {
@@ -23,9 +23,6 @@ public class FileImportStrategy implements ImportStrategy {
 			} else {
 				return new String(bytes);
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
-		return null;
 	}
 }

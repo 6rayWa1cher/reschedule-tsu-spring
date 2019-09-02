@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.beans.PropertyDescriptor;
@@ -58,21 +59,28 @@ public class TsuDbImporter {
 		return output;
 	}
 
-	@SuppressWarnings("DuplicatedCode")
+	@Scheduled(cron = "${app.tsudb.cron}")
 	public void importExternalModels() {
+		importExternalModels(false);
+	}
+
+	@SuppressWarnings("DuplicatedCode")
+	public void importExternalModels(boolean overrideCache) {
 		ObjectMapper objectMapper = new ObjectMapper()
 				.registerModule(new Jdk8Module())
 				.registerModule(new JavaTimeModule());
 		// Step 1: load all seasons
-		String allSeasonsRaw = strategy.load("timetables");
+		log.info("Starting importing");
 		List<Season> seasons;
 		try {
+			String allSeasonsRaw = strategy.load("timetables", overrideCache);
 			seasons = objectMapper.readValue(allSeasonsRaw, new TypeReference<List<Season>>() {
 			});
 		} catch (IOException e) {
 			log.error("Decoding error", e);
 			return;
 		}
+		log.info("Seasons loaded");
 		// we don't care about old data
 		List<Season> filteredSeasons = seasons.stream()
 				.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
@@ -94,15 +102,16 @@ public class TsuDbImporter {
 				try {
 					Object info = pi.infoGetter.invoke(o);
 					if (info != null) {
-						String rawData = strategy.load(pi.annotation.url() + '/' + info.toString());
+						String rawData = strategy.load(pi.annotation.url() + '/' + info.toString(), overrideCache);
 						Object o1 = objectMapper.readValue(rawData, pi.getAnnotation().clazz());
 						pi.dataSetter.invoke(o, o1);
 					}
 				} catch (InvocationTargetException | IllegalAccessException | IOException e) {
 					log.error("Data injection error", e);
+					return;
 				}
 			}
-			if (counter % 100 == 0) log.debug("counter:{} class:{}", counter, clazz.toString());
+			if (counter % 100 == 0) log.info("counter:{} class:{}", counter, clazz.toString());
 			// Step 2.2: find next objects (invoke all getters to external models from 'externalmodels' module)
 			for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(o.getClass())) {
 				Class<?> returnClazz = propertyDescriptor.getPropertyType();
@@ -110,7 +119,8 @@ public class TsuDbImporter {
 					try {
 						stack.add(propertyDescriptor.getReadMethod().invoke(o));
 					} catch (IllegalAccessException | InvocationTargetException e) {
-						log.error("Getter invokation error", e);
+						log.error("Getter invocation error", e);
+						return;
 					}
 				} else if (Collection.class.isAssignableFrom(returnClazz)) {
 					try {
@@ -123,11 +133,11 @@ public class TsuDbImporter {
 						stack.addAll(collection.stream().filter(obj -> {
 							if (obj == null) return false;
 							Class<?> c = obj.getClass();
-							return c.getModule().equals(o.getClass().getModule()) ||
-									Collection.class.isAssignableFrom(returnClazz);
+							return c.getModule().equals(o.getClass().getModule());
 						}).collect(Collectors.toList()));
 					} catch (IllegalAccessException | InvocationTargetException e) {
-						log.error("Getter invokation error (collection)", e);
+						log.error("Getter invocation error (collection)", e);
+						return;
 					}
 				}
 			}
