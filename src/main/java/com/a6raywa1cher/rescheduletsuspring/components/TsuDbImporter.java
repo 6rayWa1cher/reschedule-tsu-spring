@@ -24,6 +24,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,7 @@ public class TsuDbImporter {
 	private ImportStrategy strategy;
 	private TsuDbImporterConfigProperties properties;
 	private LessonCellService lessonCellService;
+	private final AtomicBoolean isUpdatingLocalDatabase;
 
 	@Autowired
 	public TsuDbImporter(ImportStrategy strategy, TsuDbImporterConfigProperties properties,
@@ -40,6 +42,7 @@ public class TsuDbImporter {
 		this.strategy = strategy;
 		this.properties = properties;
 		this.lessonCellService = lessonCellService;
+		this.isUpdatingLocalDatabase = new AtomicBoolean(false);
 	}
 
 	private Set<PropertyInfo<IdExternal>> findAnnotatedWithIdExternal(Class<?> clazz) {
@@ -61,11 +64,16 @@ public class TsuDbImporter {
 
 	@Scheduled(cron = "${app.tsudb.cron}")
 	public void importExternalModels() {
-		importExternalModels(false);
+		try {
+			importExternalModels(false);
+		} catch (Exception e) {
+			log.error("Error during importing", e);
+			throw new RuntimeException(e);
+		}
 	}
 
 	@SuppressWarnings("DuplicatedCode")
-	public void importExternalModels(boolean overrideCache) {
+	public synchronized void importExternalModels(boolean overrideCache) throws ImportException {
 		ObjectMapper objectMapper = new ObjectMapper()
 				.registerModule(new Jdk8Module())
 				.registerModule(new JavaTimeModule());
@@ -77,8 +85,7 @@ public class TsuDbImporter {
 			seasons = objectMapper.readValue(allSeasonsRaw, new TypeReference<List<Season>>() {
 			});
 		} catch (IOException e) {
-			log.error("Decoding error", e);
-			return;
+			throw new ImportException("Decoding seasons error", e);
 		}
 		log.info("Seasons loaded");
 		// we don't care about old data
@@ -93,6 +100,9 @@ public class TsuDbImporter {
 		while (!stack.empty()) {
 			Object o = stack.pop();
 			counter++;
+			if (counter > 350000) {
+				throw new ImportException("Stack is filled with garbage");
+			}
 			if (o == null) continue;
 			Class<?> clazz = o.getClass();
 
@@ -107,11 +117,10 @@ public class TsuDbImporter {
 						pi.dataSetter.invoke(o, o1);
 					}
 				} catch (InvocationTargetException | IllegalAccessException | IOException e) {
-					log.error("Data injection error", e);
-					return;
+					throw new ImportException(String.format("Data injection error, class:%s", clazz.toString()), e);
 				}
 			}
-			if (counter % 100 == 0) log.info("counter:{} class:{}", counter, clazz.toString());
+			if (counter % 500 == 0) log.info("counter:{} class:{}", counter, clazz.toString());
 			// Step 2.2: find next objects (invoke all getters to external models from 'externalmodels' module)
 			for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(o.getClass())) {
 				Class<?> returnClazz = propertyDescriptor.getPropertyType();
@@ -119,25 +128,26 @@ public class TsuDbImporter {
 					try {
 						stack.add(propertyDescriptor.getReadMethod().invoke(o));
 					} catch (IllegalAccessException | InvocationTargetException e) {
-						log.error("Getter invocation error", e);
-						return;
+						throw new ImportException(
+								String.format("Getter invocation error, getter:%s of object of class:%s, superclass:%s, counter:%d",
+										propertyDescriptor.getReadMethod() != null ? propertyDescriptor.getReadMethod().toString() : "null",
+										returnClazz.toString(), clazz.toString(), counter), e);
 					}
 				} else if (Collection.class.isAssignableFrom(returnClazz)) {
 					try {
 						Collection<?> collection = (Collection<?>) propertyDescriptor.getReadMethod().invoke(o);
 						// we have to check, what class is in collection (assumption that all have same class)
-//						Object anyObject = collection.size() > 0 ? collection.iterator().next() : "";
-//						if (anyObject == null) continue;
 						// there's no double collections in externalmodels, so checking only module
-//						if (anyObject.getClass().getModule().equals(o.getClass().getModule()))
 						stack.addAll(collection.stream().filter(obj -> {
 							if (obj == null) return false;
 							Class<?> c = obj.getClass();
 							return c.getModule().equals(o.getClass().getModule());
 						}).collect(Collectors.toList()));
 					} catch (IllegalAccessException | InvocationTargetException e) {
-						log.error("Getter invocation error (collection)", e);
-						return;
+						throw new ImportException(
+								String.format("Getter invocation error (collection), getter:%s of object of class:%s, superclass:%s, counter:%d",
+										propertyDescriptor.getReadMethod() != null ? propertyDescriptor.getReadMethod().toString() : "null",
+										returnClazz.toString(), clazz.toString(), counter), e);
 					}
 				}
 			}
@@ -210,40 +220,51 @@ public class TsuDbImporter {
 		// if new LessonCell, save it
 		// if updated LessonCell (db contains entity with same id), update it
 		// if LessonCell from local db hasn't double from external id, delete it
-		Set<LessonCell> allCellsInDb = lessonCellService.getAll();
-		Map<String, LessonCell> idToCellInDb = allCellsInDb.stream()
-				.collect(Collectors.toMap(LessonCell::getExternalId, Function.identity()));
-		// catch updated LessonCells
-		Set<LessonCell> intersection = preparedCells.stream()
-				.filter(lessonCell -> idToCellInDb.containsKey(lessonCell.getExternalId()))
-				.collect(Collectors.toSet());
-		Set<LessonCell> toPull = new HashSet<>();
-		Set<LessonCell> remainingPreparedCells = new HashSet<>(preparedCells);
-		Set<LessonCell> remainingDbCells = new HashSet<>(allCellsInDb);
-		for (LessonCell preparedCell : intersection) {
-			LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
-			remainingDbCells.remove(inDb);
-			remainingPreparedCells.remove(preparedCell);
-			inDb.setWeek(preparedCell.getWeek());
-			inDb.setFullSubjectName(preparedCell.getFullSubjectName());
-			inDb.setShortSubjectName(preparedCell.getShortSubjectName());
-			inDb.setTeacherName(preparedCell.getTeacherName());
-			inDb.setTeacherTitle(preparedCell.getTeacherTitle());
-			inDb.setDayOfWeek(preparedCell.getDayOfWeek());
-			inDb.setColumnPosition(preparedCell.getColumnPosition());
-			inDb.setStart(preparedCell.getStart());
-			inDb.setEnd(preparedCell.getEnd());
-			inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
-			inDb.setGroup(preparedCell.getGroup());
-			inDb.setSubgroup(preparedCell.getSubgroup());
-			inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());
-			inDb.setFaculty(preparedCell.getFaculty());
-			toPull.add(inDb);
+		if (!this.isUpdatingLocalDatabase.compareAndSet(false, true)) {
+			throw new ImportException("Database already in use!");
 		}
-		lessonCellService.saveAll(toPull);
-		lessonCellService.saveAll(remainingPreparedCells);
-		lessonCellService.deleteAll(remainingDbCells);
-		log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", remainingPreparedCells.size(), toPull.size(), remainingDbCells.size());
+		try {
+			Set<LessonCell> allCellsInDb = lessonCellService.getAll();
+			Map<String, LessonCell> idToCellInDb = allCellsInDb.stream()
+					.collect(Collectors.toMap(LessonCell::getExternalId, Function.identity()));
+			// catch updated LessonCells
+			Set<LessonCell> intersection = preparedCells.stream()
+					.filter(lessonCell -> idToCellInDb.containsKey(lessonCell.getExternalId()))
+					.collect(Collectors.toSet());
+			Set<LessonCell> toPull = new HashSet<>();
+			Set<LessonCell> remainingPreparedCells = new HashSet<>(preparedCells);
+			Set<LessonCell> remainingDbCells = new HashSet<>(allCellsInDb);
+			for (LessonCell preparedCell : intersection) {
+				LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
+				remainingDbCells.remove(inDb);
+				remainingPreparedCells.remove(preparedCell);
+				inDb.setWeek(preparedCell.getWeek());
+				inDb.setFullSubjectName(preparedCell.getFullSubjectName());
+				inDb.setShortSubjectName(preparedCell.getShortSubjectName());
+				inDb.setTeacherName(preparedCell.getTeacherName());
+				inDb.setTeacherTitle(preparedCell.getTeacherTitle());
+				inDb.setDayOfWeek(preparedCell.getDayOfWeek());
+				inDb.setColumnPosition(preparedCell.getColumnPosition());
+				inDb.setStart(preparedCell.getStart());
+				inDb.setEnd(preparedCell.getEnd());
+				inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
+				inDb.setGroup(preparedCell.getGroup());
+				inDb.setSubgroup(preparedCell.getSubgroup());
+				inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());
+				inDb.setFaculty(preparedCell.getFaculty());
+				toPull.add(inDb);
+			}
+			lessonCellService.saveAll(toPull);
+			lessonCellService.saveAll(remainingPreparedCells);
+			lessonCellService.deleteAll(remainingDbCells);
+			log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", remainingPreparedCells.size(), toPull.size(), remainingDbCells.size());
+		} finally {
+			this.isUpdatingLocalDatabase.set(false);
+		}
+	}
+
+	public boolean isUpdatingLocalDatabase() {
+		return isUpdatingLocalDatabase.get();
 	}
 
 	@Data

@@ -1,13 +1,16 @@
 package com.a6raywa1cher.rescheduletsuspring.rest;
 
+import com.a6raywa1cher.rescheduletsuspring.components.ImportException;
 import com.a6raywa1cher.rescheduletsuspring.components.TsuDbImporter;
-import com.a6raywa1cher.rescheduletsuspring.config.AppConfig;
+import com.a6raywa1cher.rescheduletsuspring.config.AppConfigProperties;
 import com.a6raywa1cher.rescheduletsuspring.dao.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.LessonCellMirror;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetFacultiesResponse;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetGroupsResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -25,27 +28,32 @@ import java.util.stream.Collectors;
 
 @Controller
 public class LessonCellController {
-	private AppConfig appConfig;
+	private static final Logger log = LoggerFactory.getLogger(TsuDbImporter.class);
+	private AppConfigProperties appConfigProperties;
 	private TsuDbImporter importer;
 	private LessonCellService service;
 
 	@Autowired
-	public LessonCellController(AppConfig appConfig, TsuDbImporter importer, LessonCellService service) {
-		this.appConfig = appConfig;
+	public LessonCellController(AppConfigProperties appConfigProperties, TsuDbImporter importer, LessonCellService service) {
+		this.appConfigProperties = appConfigProperties;
 		this.importer = importer;
 		this.service = service;
 	}
 
 	@GetMapping(path = "/force")
-	@Transactional
+	@Transactional(rollbackOn = ImportException.class)
 	public ResponseEntity<?> forceUpdate(
 			@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorization,
 			@RequestParam(required = false, name = "override_cache", defaultValue = "false")
 					Boolean overrideCache) {
-		if (!appConfig.getAdminToken().equals(authorization)) {
+		if (!appConfigProperties.getAdminToken().equals(authorization)) {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
-		importer.importExternalModels(overrideCache == null ? false : overrideCache);
+		try {
+			importer.importExternalModels(overrideCache == null ? false : overrideCache);
+		} catch (ImportException e) {
+			log.error(String.format("Error during forced update (flag %b)", overrideCache), e);
+		}
 		return ResponseEntity.ok().build();
 	}
 

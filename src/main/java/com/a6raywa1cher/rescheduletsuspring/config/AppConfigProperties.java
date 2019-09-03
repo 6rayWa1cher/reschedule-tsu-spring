@@ -11,7 +11,7 @@ import javax.validation.constraints.NotBlank;
 @ConfigurationProperties(prefix = "app")
 @Data
 @Validated
-public class AppConfig {
+public class AppConfigProperties {
 	/**
 	 * Token for admin features
 	 */
