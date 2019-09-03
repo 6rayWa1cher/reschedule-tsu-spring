@@ -23,4 +23,4 @@ spring.jpa.properties.hibernate.temp.use_jdbc_metadata_defaults: false
 # ===============================
 # SPRING ACTUATOR
 # ===============================
-management.endpoints.web.exposure.include: "*"
+#management.endpoints.web.exposure.include: "*"

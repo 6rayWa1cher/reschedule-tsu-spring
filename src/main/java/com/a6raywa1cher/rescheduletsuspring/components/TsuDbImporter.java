@@ -73,7 +73,7 @@ public class TsuDbImporter {
 		log.info("Starting importing");
 		List<Season> seasons;
 		try {
-			String allSeasonsRaw = strategy.load("timetables", overrideCache);
+			String allSeasonsRaw = strategy.load("timetables", true);
 			seasons = objectMapper.readValue(allSeasonsRaw, new TypeReference<List<Season>>() {
 			});
 		} catch (IOException e) {

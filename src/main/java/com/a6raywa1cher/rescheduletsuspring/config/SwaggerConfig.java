@@ -1,7 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.config;
 
 import com.fasterxml.classmate.TypeResolver;
-import com.google.common.base.Predicates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
@@ -35,7 +34,7 @@ public class SwaggerConfig {
 		List<SecurityScheme> schemeList = new ArrayList<>();
 		schemeList.add(new ApiKey("JWT", "jwt", "header"));
 		ApiInfo apiInfo = new ApiInfoBuilder()
-				.title("pastty-spring")
+				.title("reschedule-tsu-spring")
 				.version(buildProperties.getVersion())
 				.license("MIT License")
 				.licenseUrl("https://github.com/6rayWa1cher/reschedule-tsu-spring/blob/master/LICENSE")
@@ -52,10 +51,11 @@ public class SwaggerConfig {
 //				.additionalModels(typeResolver.resolve(UploadScriptDTO.class))
 //				.securityContexts(Arrays.asList(securityContext(), commentsSecurityContext()))
 				.select()
-				.apis(Predicates.or(
-						Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot")),
-						RequestHandlerSelectors.basePackage("org.springframework.boot.actuate")))
+//				.apis(Predicates.or(
+//						Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot")),
+//						RequestHandlerSelectors.basePackage("org.springframework.boot.actuate")))
 //				.apis(RequestHandlerSelectors.any())
+				.apis(RequestHandlerSelectors.basePackage("com.a6raywa1cher.rescheduletsuspring.rest"))
 				.paths(PathSelectors.any())
 				.build();
 	}
