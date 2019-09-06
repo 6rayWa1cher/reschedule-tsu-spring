@@ -37,7 +37,7 @@ public class SwaggerConfig {
 				.title("reschedule-tsu-spring")
 				.version(buildProperties.getVersion())
 				.license("MIT License")
-				.licenseUrl("https://github.com/6rayWa1cher/reschedule-tsu-spring/blob/master/LICENSE")
+			.licenseUrl("https://github.com/monkey-underground-coders/reschedule-tsu-spring/blob/master/LICENSE")
 				.build();
 
 		//noinspection Guava

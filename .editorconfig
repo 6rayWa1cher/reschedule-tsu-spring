@@ -1,6 +1,6 @@
 root = true
 
-[{src}/**.{java}]
+[src/**.java]
 charset = utf-8
 trim_trailing_whitespace = true
 indent_style = tab
