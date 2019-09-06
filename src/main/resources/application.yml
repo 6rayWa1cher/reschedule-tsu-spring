@@ -4,8 +4,14 @@ app:
     path: path-to-server
     cache-path: path-to-dir
     current-season: 2019 - 2020
-    cron: 0/5 * * ? * *
+    cron: "-"
   admin-token: eqnfoiwehojJSQ
+  week-sign:
+    primary-info:
+      facultyName: ПМиК
+      date: 2019-09-07
+      weekSign: MINUS
+      weekSignStrategy: plusminus
 # ===============================
 # DB CONNECTION
 # ===============================

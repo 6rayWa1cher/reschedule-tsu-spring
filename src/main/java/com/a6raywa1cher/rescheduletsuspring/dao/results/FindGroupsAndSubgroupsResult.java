@@ -8,8 +8,11 @@ public class FindGroupsAndSubgroupsResult {
 
 	private Integer subgroups;
 
-	public FindGroupsAndSubgroupsResult(String group, Integer subgroups) {
+	private Integer course;
+
+	public FindGroupsAndSubgroupsResult(String group, Integer subgroups, Integer course) {
 		this.group = group;
 		this.subgroups = subgroups;
+		this.course = course;
 	}
 }

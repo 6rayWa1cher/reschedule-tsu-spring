@@ -1,5 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.rest.response;
 
+import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -14,5 +15,7 @@ public class GetGroupsResponse {
 	public static final class GroupInfo {
 		private String name;
 		private Integer subgroups;
+		private Integer course;
+		private List<LessonCell> lessonCells;
 	}
 }

@@ -1,4 +1,4 @@
-package com.a6raywa1cher.rescheduletsuspring.components;
+package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -13,11 +13,11 @@ import java.io.IOException;
 
 @Component
 @Order(1)
-public class WhileImportFilter extends OncePerRequestFilter {
-	private TsuDbImporter importer;
+public class WhileImportOncePerRequestFilter extends OncePerRequestFilter {
+	private TsuDbImporterComponent importer;
 
 	@Autowired
-	public WhileImportFilter(TsuDbImporter importer) {
+	public WhileImportOncePerRequestFilter(TsuDbImporterComponent importer) {
 		this.importer = importer;
 	}
 

@@ -1,4 +1,4 @@
-package com.a6raywa1cher.rescheduletsuspring.components;
+package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
 import java.io.IOException;
 

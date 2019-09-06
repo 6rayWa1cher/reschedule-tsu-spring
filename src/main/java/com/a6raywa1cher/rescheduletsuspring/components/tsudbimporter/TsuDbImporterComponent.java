@@ -1,10 +1,10 @@
-package com.a6raywa1cher.rescheduletsuspring.components;
+package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
 import com.a6raywa1cher.rescheduletsuspring.config.TsuDbImporterConfigProperties;
 import com.a6raywa1cher.rescheduletsuspring.dao.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.externalmodels.*;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
-import com.a6raywa1cher.rescheduletsuspring.models.Week;
+import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
@@ -29,16 +29,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
-public class TsuDbImporter {
-	private static final Logger log = LoggerFactory.getLogger(TsuDbImporter.class);
+public class TsuDbImporterComponent {
+	private static final Logger log = LoggerFactory.getLogger(TsuDbImporterComponent.class);
 	private ImportStrategy strategy;
 	private TsuDbImporterConfigProperties properties;
 	private LessonCellService lessonCellService;
 	private final AtomicBoolean isUpdatingLocalDatabase;
 
 	@Autowired
-	public TsuDbImporter(ImportStrategy strategy, TsuDbImporterConfigProperties properties,
-	                     LessonCellService lessonCellService) {
+	public TsuDbImporterComponent(ImportStrategy strategy, TsuDbImporterConfigProperties properties,
+	                              LessonCellService lessonCellService) {
 		this.strategy = strategy;
 		this.properties = properties;
 		this.lessonCellService = lessonCellService;
@@ -163,13 +163,13 @@ public class TsuDbImporter {
 						lessonCell.setExternalId(lesson.get_id());
 						switch (lesson.getPlus_minus()) {
 							case "+":
-								lessonCell.setWeek(Week.PLUS);
+								lessonCell.setWeekSign(WeekSign.PLUS);
 								break;
 							case "-":
-								lessonCell.setWeek(Week.MINUS);
+								lessonCell.setWeekSign(WeekSign.MINUS);
 								break;
 							default:
-								lessonCell.setWeek(Week.ANY);
+								lessonCell.setWeekSign(WeekSign.ANY);
 								break;
 						}
 						// exists lessons, which contains only comment or nothing.
@@ -203,6 +203,7 @@ public class TsuDbImporter {
 						}
 						lessonCell.setStart(LocalTime.parse(startTime));
 						lessonCell.setEnd(LocalTime.parse(endTime));
+						lessonCell.setCourse(timetable.getCourse());
 						lessonCell.setGroup(timetable.getGroupName());
 						lessonCell.setSubgroup(lesson.getSubgroup());
 						lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
@@ -238,7 +239,7 @@ public class TsuDbImporter {
 				LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
 				remainingDbCells.remove(inDb);
 				remainingPreparedCells.remove(preparedCell);
-				inDb.setWeek(preparedCell.getWeek());
+				inDb.setWeekSign(preparedCell.getWeekSign());
 				inDb.setFullSubjectName(preparedCell.getFullSubjectName());
 				inDb.setShortSubjectName(preparedCell.getShortSubjectName());
 				inDb.setTeacherName(preparedCell.getTeacherName());
@@ -248,6 +249,7 @@ public class TsuDbImporter {
 				inDb.setStart(preparedCell.getStart());
 				inDb.setEnd(preparedCell.getEnd());
 				inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
+				inDb.setCourse(preparedCell.getCourse());
 				inDb.setGroup(preparedCell.getGroup());
 				inDb.setSubgroup(preparedCell.getSubgroup());
 				inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());

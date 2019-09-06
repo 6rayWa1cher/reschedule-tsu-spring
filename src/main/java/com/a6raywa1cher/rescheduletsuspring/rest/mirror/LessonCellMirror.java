@@ -1,7 +1,7 @@
 package com.a6raywa1cher.rescheduletsuspring.rest.mirror;
 
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
-import com.a6raywa1cher.rescheduletsuspring.models.Week;
+import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -12,7 +12,7 @@ import java.time.LocalTime;
 public class LessonCellMirror {
 //	private String externalId;
 
-	private Week week;
+	private WeekSign weekSign;
 
 	private String fullSubjectName;
 
@@ -43,7 +43,7 @@ public class LessonCellMirror {
 	@SuppressWarnings("DuplicatedCode")
 	public static LessonCellMirror convert(LessonCell cell) {
 		LessonCellMirror mirror = new LessonCellMirror();
-		mirror.setWeek(cell.getWeek());
+		mirror.setWeekSign(cell.getWeekSign());
 		mirror.setFullSubjectName(cell.getFullSubjectName());
 		mirror.setShortSubjectName(cell.getShortSubjectName());
 		mirror.setTeacherName(cell.getTeacherName());

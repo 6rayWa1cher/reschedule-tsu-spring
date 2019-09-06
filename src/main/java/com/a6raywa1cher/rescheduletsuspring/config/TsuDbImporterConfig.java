@@ -1,8 +1,8 @@
 package com.a6raywa1cher.rescheduletsuspring.config;
 
-import com.a6raywa1cher.rescheduletsuspring.components.FileImportStrategy;
-import com.a6raywa1cher.rescheduletsuspring.components.ImportStrategy;
-import com.a6raywa1cher.rescheduletsuspring.components.NetworkImportStrategy;
+import com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter.FileImportStrategy;
+import com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter.ImportStrategy;
+import com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter.NetworkImportStrategy;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

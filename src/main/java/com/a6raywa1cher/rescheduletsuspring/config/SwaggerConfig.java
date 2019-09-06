@@ -34,30 +34,31 @@ public class SwaggerConfig {
 		List<SecurityScheme> schemeList = new ArrayList<>();
 		schemeList.add(new ApiKey("JWT", "jwt", "header"));
 		ApiInfo apiInfo = new ApiInfoBuilder()
-				.title("reschedule-tsu-spring")
-				.version(buildProperties.getVersion())
-				.license("MIT License")
+			.title("reschedule-tsu-spring")
+			.version(buildProperties.getVersion())
+			.license("MIT License")
 			.licenseUrl("https://github.com/monkey-underground-coders/reschedule-tsu-spring/blob/master/LICENSE")
-				.build();
+			.build();
 
 		//noinspection Guava
 		return new Docket(DocumentationType.SWAGGER_2)
-				.produces(Collections.singleton("application/json"))
-				.consumes(Collections.singleton("application/json"))
+			.produces(Collections.singleton("application/json"))
+			.consumes(Collections.singleton("application/json"))
+			.host("")
 //				.ignoredParameterTypes(Authentication.class)
-				.securitySchemes(schemeList)
-				.useDefaultResponseMessages(true)
-				.apiInfo(apiInfo)
+			.securitySchemes(schemeList)
+			.useDefaultResponseMessages(true)
+			.apiInfo(apiInfo)
 //				.additionalModels(typeResolver.resolve(UploadScriptDTO.class))
 //				.securityContexts(Arrays.asList(securityContext(), commentsSecurityContext()))
-				.select()
+			.select()
 //				.apis(Predicates.or(
 //						Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot")),
 //						RequestHandlerSelectors.basePackage("org.springframework.boot.actuate")))
 //				.apis(RequestHandlerSelectors.any())
-				.apis(RequestHandlerSelectors.basePackage("com.a6raywa1cher.rescheduletsuspring.rest"))
-				.paths(PathSelectors.any())
-				.build();
+			.apis(RequestHandlerSelectors.basePackage("com.a6raywa1cher.rescheduletsuspring.rest"))
+			.paths(PathSelectors.any())
+			.build();
 	}
 
 //	private SecurityContext securityContext() {

@@ -17,4 +17,6 @@ public class AppConfigProperties {
 	 */
 	@NotBlank
 	private String adminToken;
+
+	private String host;
 }

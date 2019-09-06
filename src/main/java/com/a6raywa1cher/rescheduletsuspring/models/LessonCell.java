@@ -14,7 +14,7 @@ public class LessonCell {
 
 	@Column
 	@Enumerated(EnumType.ORDINAL)
-	private Week week;
+	private WeekSign weekSign;
 
 	@Column
 	private String fullSubjectName;
@@ -43,6 +43,9 @@ public class LessonCell {
 
 	@Column
 	private String auditoryAddress;
+
+	@Column
+	private Integer course;
 
 	@Column(name = "\"group\"")
 	private String group;
