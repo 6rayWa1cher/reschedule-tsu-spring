@@ -34,6 +34,8 @@ public class LessonCellMirror {
 
 	private String auditoryAddress;
 
+	private Integer course;
+
 	private String group;
 
 	private Integer subgroup;
@@ -53,6 +55,7 @@ public class LessonCellMirror {
 		mirror.setStart(cell.getStart());
 		mirror.setEnd(cell.getEnd());
 		mirror.setAuditoryAddress(cell.getAuditoryAddress());
+		mirror.setCourse(cell.getCourse());
 		mirror.setGroup(cell.getGroup());
 		mirror.setSubgroup(cell.getSubgroup());
 		mirror.setFaculty(cell.getFaculty());
