@@ -17,6 +17,6 @@ public class PlusMinusWeekSignStrategy implements WeekSignStrategy {
 		int startWeek = start.get(Calendar.WEEK_OF_YEAR);
 		int currWeek = current.get(Calendar.WEEK_OF_YEAR);
 		int delta = currWeek - startWeek;
-		return delta % 2 == 0 ? startWeekSign : (startWeekSign == WeekSign.PLUS ? WeekSign.MINUS : WeekSign.PLUS);
+		return delta % 2 == 0 ? startWeekSign : WeekSign.inverse(startWeekSign);
 	}
 }

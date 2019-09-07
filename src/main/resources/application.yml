@@ -10,8 +10,12 @@ app:
     primary-info:
       facultyName: ПМиК
       date: 2019-09-07
-      weekSign: MINUS
-      weekSignStrategy: plusminus
+      week-sign: MINUS
+      week-sign-strategy: plusminus
+spring:
+  jmx:
+    default-domain: com.a6raywa1cher.rescheduletsuspring
+    unique-names: true
 # ===============================
 # DB CONNECTION
 # ===============================

@@ -26,10 +26,10 @@ public class LessonCellMirror {
 
 	private Integer columnPosition;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "hh:mm")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	private LocalTime start;
 
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "hh:mm")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm")
 	private LocalTime end;
 
 	private String auditoryAddress;
