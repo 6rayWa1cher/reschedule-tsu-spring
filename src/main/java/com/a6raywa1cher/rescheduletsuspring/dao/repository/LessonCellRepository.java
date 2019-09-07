@@ -20,7 +20,8 @@ public interface LessonCellRepository extends CrudRepository<LessonCell, String>
 	List<LessonCell> getAllByGroupAndFaculty(String group, String faculty);
 
 	@Query("select new com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult(" +
-		"lc.group, case when sum(lc.subgroup)>0 then lc.countOfSubgroups else 0 end, lc.course) " +
-		"from LessonCell as lc where lc.faculty = ?1 group by lc.group, lc.countOfSubgroups, lc.course order by lc.group")
+		"lc.level, lc.group, case when sum(lc.subgroup)>0 then lc.countOfSubgroups else 0 end, lc.course) " +
+		"from LessonCell as lc where lc.faculty = ?1 group by lc.group, lc.countOfSubgroups, lc.level, lc.course " +
+		"order by lc.group")
 	List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups(String faculty);
 }

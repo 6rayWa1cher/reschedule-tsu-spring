@@ -13,6 +13,7 @@ public class GetGroupsResponse {
 	@Data
 	@AllArgsConstructor
 	public static final class GroupInfo {
+		private String level;
 		private String name;
 		private Integer subgroups;
 		private Integer course;

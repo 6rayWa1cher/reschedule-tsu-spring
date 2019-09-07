@@ -1,5 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.models;
 
+import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
 import lombok.Data;
 
 import javax.persistence.*;
@@ -43,6 +44,10 @@ public class LessonCell {
 
 	@Column
 	private String auditoryAddress;
+
+	@Column
+	@Enumerated(EnumType.ORDINAL)
+	private Direction.Level level;
 
 	@Column
 	private Integer course;

@@ -32,9 +32,10 @@ public class Direction {
 		}
 
 		public static Level getLevel(String deserializationName) {
+			if (deserializationName == null) return null;
 			return Stream.of(Level.values())
 					.filter(lvl -> lvl.getDeserializationName().equals(deserializationName.strip()))
-					.findAny().orElse(null);
+				.findAny().orElseThrow();
 		}
 
 		public String getDeserializationName() {

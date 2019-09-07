@@ -94,9 +94,12 @@ public class LessonCellController {
 		GetGroupsResponse response = new GetGroupsResponse();
 		response.setGroups(new ArrayList<>());
 		for (FindGroupsAndSubgroupsResult result : results) {
-			response.getGroups().add(new GetGroupsResponse.GroupInfo(result.getGroup(),
+			response.getGroups().add(new GetGroupsResponse.GroupInfo(
+				result.getLevel().getDeserializationName(),
+				result.getGroup(),
 				result.getSubgroups(), result.getCourse(),
-				fullTable != null && fullTable ? service.getAllByGroup(result.getGroup(), facultyId) : null));
+				fullTable != null && fullTable ? service.getAllByGroup(result.getGroup(), facultyId) : null
+			));
 		}
 		return ResponseEntity.ok(response);
 	}

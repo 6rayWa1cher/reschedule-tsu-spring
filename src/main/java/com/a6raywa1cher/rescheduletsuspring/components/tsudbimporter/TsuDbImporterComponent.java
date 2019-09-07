@@ -203,6 +203,7 @@ public class TsuDbImporterComponent {
 						}
 						lessonCell.setStart(LocalTime.parse(startTime));
 						lessonCell.setEnd(LocalTime.parse(endTime));
+						lessonCell.setLevel(timetable.getDirection().getLevel());
 						lessonCell.setCourse(timetable.getCourse());
 						lessonCell.setGroup(timetable.getGroupName());
 						lessonCell.setSubgroup(lesson.getSubgroup());
@@ -249,6 +250,7 @@ public class TsuDbImporterComponent {
 				inDb.setStart(preparedCell.getStart());
 				inDb.setEnd(preparedCell.getEnd());
 				inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
+				inDb.setLevel(preparedCell.getLevel());
 				inDb.setCourse(preparedCell.getCourse());
 				inDb.setGroup(preparedCell.getGroup());
 				inDb.setSubgroup(preparedCell.getSubgroup());
