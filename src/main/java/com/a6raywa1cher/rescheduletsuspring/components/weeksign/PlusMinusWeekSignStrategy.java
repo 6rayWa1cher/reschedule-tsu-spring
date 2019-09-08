@@ -6,11 +6,12 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class PlusMinusWeekSignStrategy implements WeekSignStrategy {
 	@Override
 	public WeekSign getWeekSign(Date date, LocalDate startDate, WeekSign startWeekSign) {
-		Calendar current = Calendar.getInstance();
+		Calendar current = Calendar.getInstance(TimeZone.getTimeZone("Europe/Moscow"));
 		current.setTime(date);
 		Calendar start = Calendar.getInstance();
 		start.setTime(Date.from(startDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant()));
