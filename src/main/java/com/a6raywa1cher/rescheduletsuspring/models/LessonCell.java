@@ -61,6 +61,9 @@ public class LessonCell {
 	@Column
 	private Integer countOfSubgroups;
 
+	@Column(nullable = false, columnDefinition = "cross_pair boolean default false not null")
+	private Boolean crossPair;
+
 	@Column(nullable = false)
 	private String faculty;
 }

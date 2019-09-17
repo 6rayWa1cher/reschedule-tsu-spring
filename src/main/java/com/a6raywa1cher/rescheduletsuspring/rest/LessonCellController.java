@@ -59,6 +59,7 @@ public class LessonCellController {
 
 	@GetMapping(path = "/force")
 	@Transactional(rollbackOn = ImportException.class)
+	@ApiOperation(value = "Force db import", notes = "Forces import from external db.")
 	public ResponseEntity<?> forceUpdate(
 		@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorization,
 		@RequestParam(required = false, name = "override_cache", defaultValue = "false")
@@ -76,7 +77,6 @@ public class LessonCellController {
 
 	@GetMapping(path = "/faculties")
 	@ApiOperation(value = "Get all faculties", notes = "Provides list of facultyId, human-readable.")
-
 	public ResponseEntity<GetFacultiesResponse> getFaculties() {
 		List<String> faculties = service.getAllFaculties();
 		GetFacultiesResponse response = new GetFacultiesResponse();
@@ -85,6 +85,7 @@ public class LessonCellController {
 	}
 
 	@GetMapping(path = "/{facultyId}/groups")
+	@ApiOperation(value = "Get all groups of faculty", notes = "Provides list of groups and additional info about them.")
 	public ResponseEntity<GetGroupsResponse> getGroupsList(
 		@PathVariable String facultyId,
 		@ApiParam(value = "Include LessonCells (use with caution!)")
@@ -105,12 +106,15 @@ public class LessonCellController {
 	}
 
 	@GetMapping(path = "/{facultyId}/group/{groupId}")
+	@ApiOperation(value = "Get raw schedule of group", notes = "Provides list of groups and additional info about them.")
 	public ResponseEntity<List<LessonCellMirror>> getSchedule(@PathVariable String groupId, @PathVariable String facultyId) {
 		List<LessonCell> cells = service.getAllByGroup(groupId, facultyId);
 		return ResponseEntity.ok(cells.stream().map(LessonCellMirror::convert).collect(Collectors.toList()));
 	}
 
 	@GetMapping(path = "/{facultyId}/group/{groupId}/week")
+	@ApiOperation(value = "Get ready-to-go schedule for 7 days",
+		notes = "Provides schedule of certain group for 7 working days.")
 	public ResponseEntity<GetScheduleForWeekResponse> getScheduleForWeek(
 		@PathVariable String facultyId, @PathVariable String groupId,
 		@ApiParam(value = "ISO Date Format, yyyy-MM-dd", example = "2019-12-28")
@@ -120,10 +124,10 @@ public class LessonCellController {
 		List<LessonCell> allCells = service.getAllByGroup(groupId, facultyId);
 		date = date == null ? new Date() : date;
 		Map<Pair<WeekSign, DayOfWeek>, List<LessonCellMirror>> map = new LinkedHashMap<>();
-		Map<DayOfWeek, Pair<WeekSign, DayOfWeek>> dayToPair = new LinkedHashMap<>();
+		List<Pair<WeekSign, DayOfWeek>> daysList = new ArrayList<>();
 		WeekSign currentWeekSign = weekSignComponent.getWeekSign(date, facultyId);
 		DayOfWeek currentDayOfWeek = LocalDate.ofInstant(date.toInstant(), ZoneId.systemDefault()).getDayOfWeek();
-		while (dayToPair.size() != 6) {
+		while (daysList.size() != 7) {
 			if (currentDayOfWeek == DayOfWeek.SUNDAY) {
 				currentDayOfWeek = DayOfWeek.MONDAY;
 				currentWeekSign = WeekSign.inverse(currentWeekSign);
@@ -131,13 +135,15 @@ public class LessonCellController {
 			}
 			log.info("{}, {}", currentWeekSign, currentDayOfWeek);
 			map.put(Pair.of(currentWeekSign, currentDayOfWeek), new ArrayList<>());
-			dayToPair.put(currentDayOfWeek, Pair.of(currentWeekSign, currentDayOfWeek));
+			daysList.add(Pair.of(currentWeekSign, currentDayOfWeek));
 			currentDayOfWeek = DayOfWeek.values()[currentDayOfWeek.ordinal() + 1];
 		}
 		for (LessonCell cell : allCells) {
-			Pair<WeekSign, DayOfWeek> pair = dayToPair.get(cell.getDayOfWeek());
-			if (cell.getWeekSign() == WeekSign.ANY || pair.getFirst().equals(cell.getWeekSign())) {
-				map.get(pair).add(LessonCellMirror.convert(cell));
+			for (Pair<WeekSign, DayOfWeek> pair : daysList) {
+				if (!cell.getDayOfWeek().equals(pair.getSecond())) continue;
+				if (cell.getWeekSign() == WeekSign.ANY || pair.getFirst().equals(cell.getWeekSign())) {
+					map.get(pair).add(LessonCellMirror.convert(cell));
+				}
 			}
 		}
 		GetScheduleForWeekResponse response = new GetScheduleForWeekResponse();
@@ -152,6 +158,7 @@ public class LessonCellController {
 	}
 
 	@GetMapping(path = "/{facultyId}/week_sign")
+	@ApiOperation(value = "Get week sign", notes = "Get week sign of certain faculty.")
 	public ResponseEntity<GetWeekSignResponse> getWeekSign(
 		@ApiParam(value = "ISO Date Format, yyyy-MM-dd", example = "2019-12-28")
 		@RequestParam(name = "day", required = false)

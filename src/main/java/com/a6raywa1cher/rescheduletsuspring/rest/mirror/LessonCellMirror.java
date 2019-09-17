@@ -40,6 +40,8 @@ public class LessonCellMirror {
 
 	private Integer subgroup;
 
+	private Boolean crossPair;
+
 	private String faculty;
 
 	@SuppressWarnings("DuplicatedCode")
@@ -58,6 +60,7 @@ public class LessonCellMirror {
 		mirror.setCourse(cell.getCourse());
 		mirror.setGroup(cell.getGroup());
 		mirror.setSubgroup(cell.getSubgroup());
+		mirror.setCrossPair(cell.getCrossPair());
 		mirror.setFaculty(cell.getFaculty());
 		return mirror;
 	}

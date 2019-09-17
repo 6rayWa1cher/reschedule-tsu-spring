@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
 @Component
 public class TsuDbImporterComponent {
 	private static final Logger log = LoggerFactory.getLogger(TsuDbImporterComponent.class);
+	private final AtomicBoolean isUpdatingLocalDatabase;
 	private ImportStrategy strategy;
 	private TsuDbImporterConfigProperties properties;
 	private LessonCellService lessonCellService;
-	private final AtomicBoolean isUpdatingLocalDatabase;
 
 	@Autowired
 	public TsuDbImporterComponent(ImportStrategy strategy, TsuDbImporterConfigProperties properties,
@@ -75,8 +75,8 @@ public class TsuDbImporterComponent {
 	@SuppressWarnings("DuplicatedCode")
 	public synchronized void importExternalModels(boolean overrideCache) throws ImportException {
 		ObjectMapper objectMapper = new ObjectMapper()
-				.registerModule(new Jdk8Module())
-				.registerModule(new JavaTimeModule());
+			.registerModule(new Jdk8Module())
+			.registerModule(new JavaTimeModule());
 		// Step 1: load all seasons
 		log.info("Starting importing");
 		List<Season> seasons;
@@ -90,8 +90,8 @@ public class TsuDbImporterComponent {
 		log.info("Seasons loaded");
 		// we don't care about old data
 		List<Season> filteredSeasons = seasons.stream()
-				.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
-				.collect(Collectors.toList());
+			.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
+			.collect(Collectors.toList());
 		// Step 2: find all @IdExternal (id's in Season children to some objects in external db)
 		// and fill fields with data from strategy
 		Stack<Object> stack = new Stack<>();
@@ -129,9 +129,9 @@ public class TsuDbImporterComponent {
 						stack.add(propertyDescriptor.getReadMethod().invoke(o));
 					} catch (IllegalAccessException | InvocationTargetException e) {
 						throw new ImportException(
-								String.format("Getter invocation error, getter:%s of object of class:%s, superclass:%s, counter:%d",
-										propertyDescriptor.getReadMethod() != null ? propertyDescriptor.getReadMethod().toString() : "null",
-										returnClazz.toString(), clazz.toString(), counter), e);
+							String.format("Getter invocation error, getter:%s of object of class:%s, superclass:%s, counter:%d",
+								propertyDescriptor.getReadMethod() != null ? propertyDescriptor.getReadMethod().toString() : "null",
+								returnClazz.toString(), clazz.toString(), counter), e);
 					}
 				} else if (Collection.class.isAssignableFrom(returnClazz)) {
 					try {
@@ -145,9 +145,9 @@ public class TsuDbImporterComponent {
 						}).collect(Collectors.toList()));
 					} catch (IllegalAccessException | InvocationTargetException e) {
 						throw new ImportException(
-								String.format("Getter invocation error (collection), getter:%s of object of class:%s, superclass:%s, counter:%d",
-										propertyDescriptor.getReadMethod() != null ? propertyDescriptor.getReadMethod().toString() : "null",
-										returnClazz.toString(), clazz.toString(), counter), e);
+							String.format("Getter invocation error (collection), getter:%s of object of class:%s, superclass:%s, counter:%d",
+								propertyDescriptor.getReadMethod() != null ? propertyDescriptor.getReadMethod().toString() : "null",
+								returnClazz.toString(), clazz.toString(), counter), e);
 					}
 				}
 			}
@@ -188,7 +188,7 @@ public class TsuDbImporterComponent {
 						}
 						if (lesson.getAuditoryObj() != null) {
 							lessonCell.setAuditoryAddress(lesson.getAuditoryObj().getHousing() + "|" +
-									lesson.getAuditoryObj().getName());
+								lesson.getAuditoryObj().getName());
 						}
 						lessonCell.setDayOfWeek(cell.getDay().getJavaDayOfWeek());
 						lessonCell.setColumnPosition(cell.getNumber());
@@ -218,7 +218,22 @@ public class TsuDbImporterComponent {
 				}
 			}
 		}
-		// Step 4: update local db
+		// Step 4: set CrossPair flags
+		Map<CrossPairLessonCell, LessonCell> firstOccurrences = new HashMap<>();
+		for (LessonCell lessonCell : preparedCells) {
+			CrossPairLessonCell crossPair = CrossPairLessonCell.convert(lessonCell);
+			if (firstOccurrences.containsKey(crossPair)) {
+				firstOccurrences.get(crossPair).setCrossPair(true);
+				lessonCell.setCrossPair(true);
+			} else {
+				firstOccurrences.put(crossPair, lessonCell);
+				lessonCell.setCrossPair(false);
+			}
+		}
+		firstOccurrences.clear();
+		System.gc();
+
+		// Step 5: update local db
 		// if new LessonCell, save it
 		// if updated LessonCell (db contains entity with same id), update it
 		// if LessonCell from local db hasn't double from external id, delete it
@@ -228,11 +243,11 @@ public class TsuDbImporterComponent {
 		try {
 			Set<LessonCell> allCellsInDb = lessonCellService.getAll();
 			Map<String, LessonCell> idToCellInDb = allCellsInDb.stream()
-					.collect(Collectors.toMap(LessonCell::getExternalId, Function.identity()));
+				.collect(Collectors.toMap(LessonCell::getExternalId, Function.identity()));
 			// catch updated LessonCells
 			Set<LessonCell> intersection = preparedCells.stream()
-					.filter(lessonCell -> idToCellInDb.containsKey(lessonCell.getExternalId()))
-					.collect(Collectors.toSet());
+				.filter(lessonCell -> idToCellInDb.containsKey(lessonCell.getExternalId()))
+				.collect(Collectors.toSet());
 			Set<LessonCell> toPull = new HashSet<>();
 			Set<LessonCell> remainingPreparedCells = new HashSet<>(preparedCells);
 			Set<LessonCell> remainingDbCells = new HashSet<>(allCellsInDb);
@@ -255,6 +270,7 @@ public class TsuDbImporterComponent {
 				inDb.setGroup(preparedCell.getGroup());
 				inDb.setSubgroup(preparedCell.getSubgroup());
 				inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());
+				inDb.setCrossPair(preparedCell.getCrossPair());
 				inDb.setFaculty(preparedCell.getFaculty());
 				toPull.add(inDb);
 			}
