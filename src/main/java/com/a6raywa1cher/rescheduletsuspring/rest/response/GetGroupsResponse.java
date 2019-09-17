@@ -1,6 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.rest.response;
 
-import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
+import com.a6raywa1cher.rescheduletsuspring.rest.mirror.LessonCellMirror;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -17,6 +17,6 @@ public class GetGroupsResponse {
 		private String name;
 		private Integer subgroups;
 		private Integer course;
-		private List<LessonCell> lessonCells;
+		private List<LessonCellMirror> lessonCells;
 	}
 }

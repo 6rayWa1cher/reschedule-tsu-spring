@@ -99,7 +99,8 @@ public class LessonCellController {
 				result.getLevel().getDeserializationName(),
 				result.getGroup(),
 				result.getSubgroups(), result.getCourse(),
-				fullTable != null && fullTable ? service.getAllByGroup(result.getGroup(), facultyId) : null
+				fullTable != null && fullTable ? service.getAllByGroup(result.getGroup(), facultyId)
+					.stream().map(LessonCellMirror::convert).collect(Collectors.toList()) : null
 			));
 		}
 		return ResponseEntity.ok(response);
