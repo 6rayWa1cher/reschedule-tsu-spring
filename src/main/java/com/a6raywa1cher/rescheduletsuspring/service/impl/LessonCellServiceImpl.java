@@ -66,7 +66,7 @@ public class LessonCellServiceImpl implements LessonCellService {
 
 	@Override
 	public List<DaySchedule> getReadySchedules(String faculty, String group, Date from, Integer days) {
-		List<LessonCell> allCells = this.getAllByGroup(faculty, group);
+		List<LessonCell> allCells = this.getAllByGroup(group, faculty);
 		WeekSign weekSign = weekSignComponent.getWeekSign(from, faculty);
 		return convertToReadySchedule(allCells, weekSign, from, days);
 	}
