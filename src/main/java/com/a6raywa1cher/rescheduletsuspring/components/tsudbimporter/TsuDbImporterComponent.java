@@ -233,7 +233,7 @@ public class TsuDbImporterComponent {
 						}
 						lessonCell.setLevel(timetable.getDirection().getLevel());
 						lessonCell.setCourse(timetable.getCourse());
-						lessonCell.setGroup(timetable.getGroupName());
+						lessonCell.setGroup(timetable.getGroupName().replace('"', '\''));
 						lessonCell.setSubgroup(lesson.getSubgroup());
 						lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
 						lessonCell.setFaculty(faculty);
