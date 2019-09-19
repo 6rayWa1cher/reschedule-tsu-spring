@@ -1,6 +1,7 @@
 package com.a6raywa1cher.rescheduletsuspring.dao.repository;
 
 import com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult;
+import com.a6raywa1cher.rescheduletsuspring.dao.results.FindTeacherResult;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -24,4 +25,11 @@ public interface LessonCellRepository extends CrudRepository<LessonCell, String>
 		"from LessonCell as lc where lc.faculty = ?1 group by lc.group, lc.countOfSubgroups, lc.level, lc.course " +
 		"order by lc.group")
 	List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups(String faculty);
+
+	@Query("from LessonCell as lc where lc.teacherName = ?1 order by lc.dayOfWeek, lc.columnPosition")
+	List<LessonCell> getAllByTeacherName(String teacherName);
+
+	@Query("select new com.a6raywa1cher.rescheduletsuspring.dao.results.FindTeacherResult(lc.teacherName) " +
+		"from LessonCell as lc where lc.teacherName like :teacherName% group by lc.teacherName order by lc.teacherName")
+	List<FindTeacherResult> getAllByTeacherNameStartsWith(String teacherName);
 }

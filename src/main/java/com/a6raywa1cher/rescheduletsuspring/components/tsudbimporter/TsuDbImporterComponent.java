@@ -1,14 +1,15 @@
 package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
 import com.a6raywa1cher.rescheduletsuspring.config.TsuDbImporterConfigProperties;
-import com.a6raywa1cher.rescheduletsuspring.dao.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.externalmodels.*;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
+import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.sentry.Sentry;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,8 +69,35 @@ public class TsuDbImporterComponent {
 			importExternalModels(false);
 		} catch (Exception e) {
 			log.error("Error during importing", e);
+			Sentry.capture(e);
 			throw new RuntimeException(e);
 		}
+	}
+
+	private void setTimes(LessonCell cell, TimeSchedule times) {
+		String rawTime = times.getSchedule().get(cell.getColumnPosition());
+		String startTime = rawTime.split("-")[0];
+		if (startTime.length() != 5) { // 8:30 -> 08:30
+			startTime = "0" + startTime;
+		}
+		String endTime = rawTime.split("-")[1];
+		if (endTime.length() != 5) {
+			endTime = "0" + endTime;
+		}
+		cell.setStart(LocalTime.parse(startTime));
+		cell.setEnd(LocalTime.parse(endTime));
+	}
+
+	private TimeSchedule getMostPopular(Map<TimeSchedule, Integer> map) {
+		int max = 0;
+		TimeSchedule timeSchedule = null;
+		for (Map.Entry<TimeSchedule, Integer> entry : map.entrySet()) {
+			if (entry.getValue() > max) {
+				max = entry.getValue();
+				timeSchedule = entry.getKey();
+			}
+		}
+		return timeSchedule;
 	}
 
 	@SuppressWarnings("DuplicatedCode")
@@ -155,6 +183,7 @@ public class TsuDbImporterComponent {
 		log.info("Imported {} items", counter);
 		// Step 3: convert data to LessonCell
 		Set<LessonCell> preparedCells = new HashSet<>();
+		Map<String, Map<TimeSchedule, Integer>> defaultTimeScheduleMap = new HashMap<>();
 		for (Season season : filteredSeasons) {
 			for (Timetable timetable : season.getTables()) {
 				for (TimetableCell cell : timetable.getCells()) {
@@ -192,23 +221,22 @@ public class TsuDbImporterComponent {
 						}
 						lessonCell.setDayOfWeek(cell.getDay().getJavaDayOfWeek());
 						lessonCell.setColumnPosition(cell.getNumber());
-						String rawTime = timetable.getTimeSchedule().getSchedule().get(cell.getNumber());
-						String startTime = rawTime.split("-")[0];
-						if (startTime.length() != 5) { // 8:30 -> 08:30
-							startTime = "0" + startTime;
+						String faculty = season.get_id().getFaculty().getAbbr();
+						if (timetable.getTimeSchedule() != null) {
+//							defaultTimeScheduleMap.putIfAbsent(season.get_id().getFaculty().getAbbr(), timetable.getTimeSchedule());
+							defaultTimeScheduleMap.putIfAbsent(faculty, new HashMap<>());
+							defaultTimeScheduleMap.get(faculty).putIfAbsent(timetable.getTimeSchedule(), 0);
+							int prev = defaultTimeScheduleMap.get(faculty).get(timetable.getTimeSchedule());
+							defaultTimeScheduleMap.get(faculty).put(timetable.getTimeSchedule(), prev + 1);
+//							String rawTime = timetable.getTimeSchedule().getSchedule().get(cell.getNumber());
+							setTimes(lessonCell, timetable.getTimeSchedule());
 						}
-						String endTime = rawTime.split("-")[1];
-						if (endTime.length() != 5) {
-							endTime = "0" + endTime;
-						}
-						lessonCell.setStart(LocalTime.parse(startTime));
-						lessonCell.setEnd(LocalTime.parse(endTime));
 						lessonCell.setLevel(timetable.getDirection().getLevel());
 						lessonCell.setCourse(timetable.getCourse());
 						lessonCell.setGroup(timetable.getGroupName());
 						lessonCell.setSubgroup(lesson.getSubgroup());
 						lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
-						lessonCell.setFaculty(season.get_id().getFaculty().getAbbr());
+						lessonCell.setFaculty(faculty);
 						// drop empty lessons
 						if (lessonCell.getFullSubjectName() == null && lessonCell.getShortSubjectName() == null) {
 							continue;
@@ -218,7 +246,7 @@ public class TsuDbImporterComponent {
 				}
 			}
 		}
-		// Step 4: set CrossPair flags
+		// Step 4: set CrossPair flags and set times, if it's not presented
 		Map<CrossPairLessonCell, LessonCell> firstOccurrences = new HashMap<>();
 		for (LessonCell lessonCell : preparedCells) {
 			CrossPairLessonCell crossPair = CrossPairLessonCell.convert(lessonCell);
@@ -228,6 +256,9 @@ public class TsuDbImporterComponent {
 			} else {
 				firstOccurrences.put(crossPair, lessonCell);
 				lessonCell.setCrossPair(false);
+			}
+			if (lessonCell.getStart() == null) {
+				setTimes(lessonCell, getMostPopular(defaultTimeScheduleMap.get(lessonCell.getFaculty())));
 			}
 		}
 		firstOccurrences.clear();
