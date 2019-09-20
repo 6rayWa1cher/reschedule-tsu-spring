@@ -188,60 +188,65 @@ public class TsuDbImporterComponent {
 			for (Timetable timetable : season.getTables()) {
 				for (TimetableCell cell : timetable.getCells()) {
 					for (Lesson lesson : cell.getLessons()) {
-						LessonCell lessonCell = new LessonCell();
-						lessonCell.setExternalId(lesson.get_id());
-						switch (lesson.getPlus_minus()) {
-							case "+":
-								lessonCell.setWeekSign(WeekSign.PLUS);
-								break;
-							case "-":
-								lessonCell.setWeekSign(WeekSign.MINUS);
-								break;
-							default:
-								lessonCell.setWeekSign(WeekSign.ANY);
-								break;
-						}
-						// exists lessons, which contains only comment or nothing.
-						// if comment provided, use it as subject
-						// else drop this lesson
-						if (lesson.getSubjectObj() != null) {
-							lessonCell.setFullSubjectName(lesson.getSubjectObj().getName());
-							lessonCell.setShortSubjectName(lesson.getSubjectObj().getAbbr());
-						} else {
-							lessonCell.setFullSubjectName(lesson.getComment());
-							lessonCell.setShortSubjectName(lesson.getComment());
-						}
-						if (lesson.getTeacherObj() != null) {
-							lessonCell.setTeacherName(lesson.getTeacherObj().getFio());
-							lessonCell.setTeacherTitle(lesson.getTeacherObj().getPost());
-						}
-						if (lesson.getAuditoryObj() != null) {
-							lessonCell.setAuditoryAddress(lesson.getAuditoryObj().getHousing() + "|" +
-								lesson.getAuditoryObj().getName());
-						}
-						lessonCell.setDayOfWeek(cell.getDay().getJavaDayOfWeek());
-						lessonCell.setColumnPosition(cell.getNumber());
-						String faculty = season.get_id().getFaculty().getAbbr();
-						if (timetable.getTimeSchedule() != null) {
+						try {
+							LessonCell lessonCell = new LessonCell();
+							lessonCell.setExternalId(lesson.get_id());
+							switch (lesson.getPlus_minus()) {
+								case "+":
+									lessonCell.setWeekSign(WeekSign.PLUS);
+									break;
+								case "-":
+									lessonCell.setWeekSign(WeekSign.MINUS);
+									break;
+								default:
+									lessonCell.setWeekSign(WeekSign.ANY);
+									break;
+							}
+							// exists lessons, which contains only comment or nothing.
+							// if comment provided, use it as subject
+							// else drop this lesson
+							if (lesson.getSubjectObj() != null) {
+								lessonCell.setFullSubjectName(lesson.getSubjectObj().getName());
+								lessonCell.setShortSubjectName(lesson.getSubjectObj().getAbbr());
+							} else {
+								lessonCell.setFullSubjectName(lesson.getComment());
+								lessonCell.setShortSubjectName(lesson.getComment());
+							}
+							if (lesson.getTeacherObj() != null) {
+								lessonCell.setTeacherName(lesson.getTeacherObj().getFio());
+								lessonCell.setTeacherTitle(lesson.getTeacherObj().getPost());
+							}
+							if (lesson.getAuditoryObj() != null) {
+								lessonCell.setAuditoryAddress(lesson.getAuditoryObj().getHousing() + "|" +
+									lesson.getAuditoryObj().getName());
+							}
+							lessonCell.setDayOfWeek(cell.getDay().getJavaDayOfWeek());
+							lessonCell.setColumnPosition(cell.getNumber());
+							String faculty = season.get_id().getFaculty().getAbbr();
+							if (timetable.getTimeSchedule() != null) {
 //							defaultTimeScheduleMap.putIfAbsent(season.get_id().getFaculty().getAbbr(), timetable.getTimeSchedule());
-							defaultTimeScheduleMap.putIfAbsent(faculty, new HashMap<>());
-							defaultTimeScheduleMap.get(faculty).putIfAbsent(timetable.getTimeSchedule(), 0);
-							int prev = defaultTimeScheduleMap.get(faculty).get(timetable.getTimeSchedule());
-							defaultTimeScheduleMap.get(faculty).put(timetable.getTimeSchedule(), prev + 1);
+								defaultTimeScheduleMap.putIfAbsent(faculty, new HashMap<>());
+								defaultTimeScheduleMap.get(faculty).putIfAbsent(timetable.getTimeSchedule(), 0);
+								int prev = defaultTimeScheduleMap.get(faculty).get(timetable.getTimeSchedule());
+								defaultTimeScheduleMap.get(faculty).put(timetable.getTimeSchedule(), prev + 1);
 //							String rawTime = timetable.getTimeSchedule().getSchedule().get(cell.getNumber());
-							setTimes(lessonCell, timetable.getTimeSchedule());
+								setTimes(lessonCell, timetable.getTimeSchedule());
+							}
+							lessonCell.setLevel(timetable.getDirection().getLevel());
+							lessonCell.setCourse(timetable.getCourse());
+							lessonCell.setGroup(timetable.getGroupName().replace('"', '\''));
+							lessonCell.setSubgroup(lesson.getSubgroup());
+							lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
+							lessonCell.setFaculty(faculty);
+							// drop empty lessons
+							if (lessonCell.getFullSubjectName() == null && lessonCell.getShortSubjectName() == null) {
+								continue;
+							}
+							preparedCells.add(lessonCell);
+						} catch (Exception e) {
+							log.error("Error while transfering to LessonCell, faculty {}",
+								season.get_id().getFaculty().getAbbr());
 						}
-						lessonCell.setLevel(timetable.getDirection().getLevel());
-						lessonCell.setCourse(timetable.getCourse());
-						lessonCell.setGroup(timetable.getGroupName().replace('"', '\''));
-						lessonCell.setSubgroup(lesson.getSubgroup());
-						lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
-						lessonCell.setFaculty(faculty);
-						// drop empty lessons
-						if (lessonCell.getFullSubjectName() == null && lessonCell.getShortSubjectName() == null) {
-							continue;
-						}
-						preparedCells.add(lessonCell);
 					}
 				}
 			}
