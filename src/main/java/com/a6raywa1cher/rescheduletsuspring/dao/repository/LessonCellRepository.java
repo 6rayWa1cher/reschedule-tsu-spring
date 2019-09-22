@@ -30,6 +30,6 @@ public interface LessonCellRepository extends CrudRepository<LessonCell, String>
 	List<LessonCell> getAllByTeacherName(String teacherName);
 
 	@Query("select new com.a6raywa1cher.rescheduletsuspring.dao.results.FindTeacherResult(lc.teacherName) " +
-		"from LessonCell as lc where lc.teacherName like :teacherName% group by lc.teacherName order by lc.teacherName")
+		"from LessonCell as lc where lower(lc.teacherName) like :teacherName% group by lc.teacherName order by lc.teacherName")
 	List<FindTeacherResult> getAllByTeacherNameStartsWith(String teacherName);
 }

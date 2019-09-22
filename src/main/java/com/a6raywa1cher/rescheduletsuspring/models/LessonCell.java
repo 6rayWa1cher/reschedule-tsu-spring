@@ -9,6 +9,9 @@ import java.time.LocalTime;
 
 @Data
 @Entity
+@Table(name = "lesson_cell", indexes = {
+	@Index(columnList = "faculty,group", name = "Get_for_group")
+})
 public class LessonCell {
 	@Id
 	private String externalId;

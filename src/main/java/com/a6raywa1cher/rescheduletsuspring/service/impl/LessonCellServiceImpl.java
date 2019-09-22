@@ -103,7 +103,7 @@ public class LessonCellServiceImpl implements LessonCellService {
 
 	@Override
 	public List<String> getTeachersWithName(String teacherName) {
-		return repository.getAllByTeacherNameStartsWith(teacherName).stream()
+		return repository.getAllByTeacherNameStartsWith(teacherName.toLowerCase()).stream()
 			.map(FindTeacherResult::getTeacherName)
 			.collect(Collectors.toList());
 	}
