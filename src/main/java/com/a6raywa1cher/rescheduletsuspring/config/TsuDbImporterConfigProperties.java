@@ -36,4 +36,10 @@ public class TsuDbImporterConfigProperties {
 	 */
 	@NotBlank
 	private String currentSeason;
+
+	/**
+	 * Filter for semesters
+	 */
+	@NotBlank
+	private String semester;
 }

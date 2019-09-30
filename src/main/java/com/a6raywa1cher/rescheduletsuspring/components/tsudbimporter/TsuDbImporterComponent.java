@@ -119,6 +119,7 @@ public class TsuDbImporterComponent {
 		// we don't care about old data
 		List<Season> filteredSeasons = seasons.stream()
 			.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
+			.filter(season -> Objects.equals(season.get_id().getSemester(), properties.getSemester()))
 			.collect(Collectors.toList());
 		// Step 2: find all @IdExternal (id's in Season children to some objects in external db)
 		// and fill fields with data from strategy

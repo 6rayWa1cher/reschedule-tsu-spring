@@ -4,6 +4,7 @@ app:
     path: path-to-server
     cache-path: path-to-dir
     current-season: 2019 - 2020
+    semester: Осень
     cron: "-"
   admin-token: eqnfoiwehojJSQ
   week-sign:
@@ -19,13 +20,13 @@ spring:
 # ===============================
 # DB CONNECTION
 # ===============================
-spring.datasource.url: jdbc:postgresql://localhost:5433/reschedule-tsu
+spring.datasource.url: jdbc:postgresql://localhost:5432/reshedule-tsu
 spring.datasource.username: postgres
-spring.datasource.password: postgres
+spring.datasource.password: Ofss57ArFFNAZfNL9cWO
 # ===============================
 # JPA / HIBERNATE
 # ===============================
-spring.jpa.show-sql: true
+spring.jpa.show-sql: false
 spring.jpa.hibernate.ddl-auto: update
 spring.jpa.properties.hibernate.default_schema: public
 spring.jpa.properties.hibernate.current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext

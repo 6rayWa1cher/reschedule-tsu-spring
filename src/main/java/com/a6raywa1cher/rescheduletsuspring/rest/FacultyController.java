@@ -71,14 +71,14 @@ public class FacultyController {
 		return ResponseEntity.ok(response);
 	}
 
-	@GetMapping(path = "/{facultyId}/groups/{groupId}")
+	@GetMapping(path = "/{facultyId}/groups/{groupId:.+}")
 	@ApiOperation(value = "Get raw schedule of group", notes = "Provides list of groups and additional info about them.")
 	public ResponseEntity<List<LessonCellMirror>> getSchedule(@PathVariable String groupId, @PathVariable String facultyId) {
 		List<LessonCell> cells = service.getAllByGroup(groupId, facultyId);
 		return ResponseEntity.ok(cells.stream().map(LessonCellMirror::convert).collect(Collectors.toList()));
 	}
 
-	@GetMapping(path = "/{facultyId}/groups/{groupId}/week")
+	@GetMapping(path = "/{facultyId}/groups/{groupId:.+}/week")
 	@ApiOperation(value = "Get ready-to-go schedule for 7 days",
 		notes = "Provides schedule of certain group for 7 working days.")
 	public ResponseEntity<GetScheduleForWeekResponse> getScheduleForWeek(
