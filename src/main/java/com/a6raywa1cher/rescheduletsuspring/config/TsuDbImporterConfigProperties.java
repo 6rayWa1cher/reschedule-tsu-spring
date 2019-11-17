@@ -30,16 +30,4 @@ public class TsuDbImporterConfigProperties {
 	 * Delay for importer
 	 */
 	private String cron;
-
-	/**
-	 * Filter for seasons
-	 */
-	@NotBlank
-	private String currentSeason;
-
-	/**
-	 * Filter for semesters
-	 */
-	@NotBlank
-	private String semester;
 }

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,6 +101,20 @@ public class TsuDbImporterComponent {
 		return timeSchedule;
 	}
 
+	private String clean(String string, String regex, int maxLen) {
+		StringBuilder sb = new StringBuilder();
+		int currLen = 0;
+		for (String s : string.split("")) {
+			if (s.matches(regex)) {
+				if (currLen++ > maxLen) {
+					break;
+				}
+				sb.append(s);
+			}
+		}
+		return sb.toString();
+	}
+
 	@SuppressWarnings("DuplicatedCode")
 	public synchronized void importExternalModels(boolean overrideCache) throws ImportException {
 		ObjectMapper objectMapper = new ObjectMapper()
@@ -117,9 +132,9 @@ public class TsuDbImporterComponent {
 		}
 		log.info("Seasons loaded");
 		// we don't care about old data
+		String currentYear = Integer.toString(LocalDate.now().getYear());
 		List<Season> filteredSeasons = seasons.stream()
-			.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
-			.filter(season -> Objects.equals(season.get_id().getSemester(), properties.getSemester()))
+			.filter(season -> season.get_id().getYear().contains(currentYear))
 			.collect(Collectors.toList());
 		// Step 2: find all @IdExternal (id's in Season children to some objects in external db)
 		// and fill fields with data from strategy
@@ -129,7 +144,7 @@ public class TsuDbImporterComponent {
 		while (!stack.empty()) {
 			Object o = stack.pop();
 			counter++;
-			if (counter > 350000) {
+			if (counter > 700000) {
 				throw new ImportException("Stack is filled with garbage");
 			}
 			if (o == null) continue;
@@ -185,11 +200,13 @@ public class TsuDbImporterComponent {
 		// Step 3: convert data to LessonCell
 		Set<LessonCell> preparedCells = new HashSet<>();
 		Map<String, Map<TimeSchedule, Integer>> defaultTimeScheduleMap = new HashMap<>();
+		Set<String> faculties = new HashSet<>();
 		for (Season season : filteredSeasons) {
 			for (Timetable timetable : season.getTables()) {
 				for (TimetableCell cell : timetable.getCells()) {
 					for (Lesson lesson : cell.getLessons()) {
 						try {
+							faculties.add(season.get_id().getFaculty().getName());
 							LessonCell lessonCell = new LessonCell();
 							lessonCell.setExternalId(lesson.get_id());
 							switch (lesson.getPlus_minus()) {
@@ -203,6 +220,7 @@ public class TsuDbImporterComponent {
 									lessonCell.setWeekSign(WeekSign.ANY);
 									break;
 							}
+							lessonCell.setSemester(LessonCell.semesterToNumber(season.get_id().getYear(), season.get_id().getSemester()));
 							// exists lessons, which contains only comment or nothing.
 							// if comment provided, use it as subject
 							// else drop this lesson
@@ -214,7 +232,7 @@ public class TsuDbImporterComponent {
 								lessonCell.setShortSubjectName(lesson.getComment());
 							}
 							if (lesson.getTeacherObj() != null) {
-								lessonCell.setTeacherName(lesson.getTeacherObj().getFio());
+								lessonCell.setTeacherName(clean(lesson.getTeacherObj().getFio(), "[a-zA-Zа-яА-Я _\\-']", 100));
 								lessonCell.setTeacherTitle(lesson.getTeacherObj().getPost());
 							}
 							if (lesson.getAuditoryObj() != null) {
@@ -223,19 +241,17 @@ public class TsuDbImporterComponent {
 							}
 							lessonCell.setDayOfWeek(cell.getDay().getJavaDayOfWeek());
 							lessonCell.setColumnPosition(cell.getNumber());
-							String faculty = season.get_id().getFaculty().getAbbr();
+							String faculty = clean(season.get_id().getFaculty().getAbbr(), "[а-яА-Я, \\-0-9]", 50);
 							if (timetable.getTimeSchedule() != null) {
-//							defaultTimeScheduleMap.putIfAbsent(season.get_id().getFaculty().getAbbr(), timetable.getTimeSchedule());
 								defaultTimeScheduleMap.putIfAbsent(faculty, new HashMap<>());
 								defaultTimeScheduleMap.get(faculty).putIfAbsent(timetable.getTimeSchedule(), 0);
 								int prev = defaultTimeScheduleMap.get(faculty).get(timetable.getTimeSchedule());
 								defaultTimeScheduleMap.get(faculty).put(timetable.getTimeSchedule(), prev + 1);
-//							String rawTime = timetable.getTimeSchedule().getSchedule().get(cell.getNumber());
 								setTimes(lessonCell, timetable.getTimeSchedule());
 							}
 							lessonCell.setLevel(timetable.getDirection().getLevel());
 							lessonCell.setCourse(timetable.getCourse());
-							lessonCell.setGroup(timetable.getGroupName().replace('"', '\''));
+							lessonCell.setGroup(clean(timetable.getGroupName() == null ? "Неизвестная группа" : timetable.getGroupName(), "[а-яА-Я, \\-0-9'.(М)]", 150));
 							lessonCell.setSubgroup(lesson.getSubgroup());
 							lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());
 							lessonCell.setFaculty(faculty);
@@ -252,6 +268,7 @@ public class TsuDbImporterComponent {
 				}
 			}
 		}
+		faculties.forEach(System.out::println);
 		// Step 4: set CrossPair flags and set times, if it's not presented
 		Map<CrossPairLessonCell, LessonCell> firstOccurrences = new HashMap<>();
 		for (LessonCell lessonCell : preparedCells) {
@@ -292,6 +309,7 @@ public class TsuDbImporterComponent {
 				LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
 				remainingDbCells.remove(inDb);
 				remainingPreparedCells.remove(preparedCell);
+				inDb.setSemester(preparedCell.getSemester());
 				inDb.setWeekSign(preparedCell.getWeekSign());
 				inDb.setFullSubjectName(preparedCell.getFullSubjectName());
 				inDb.setShortSubjectName(preparedCell.getShortSubjectName());

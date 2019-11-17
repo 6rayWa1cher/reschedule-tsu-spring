@@ -1,10 +1,8 @@
 app:
   tsudb:
     import-source: network
-    path: path-to-server
-    cache-path: path-to-dir
-    current-season: 2019 - 2020
-    semester: Осень
+    path: http://82.179.142.90:1337/
+    cache-path: H:\drop this box\Dropbox\python\sandbox\crawl\output_old
     cron: "-"
   admin-token: eqnfoiwehojJSQ
   week-sign:

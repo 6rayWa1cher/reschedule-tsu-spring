@@ -14,17 +14,20 @@ import java.util.Set;
 public interface LessonCellRepository extends CrudRepository<LessonCell, String> {
 	Set<LessonCell> getAllBy();
 
+	@Query("select lc.semester from LessonCell as lc where lc.faculty = ?1 group by lc.semester order by lc.semester desc")
+	List<Integer> getAllSemestersByFaculty(String faculty);
+
 	@Query("select lc.faculty from LessonCell as lc group by lc.faculty")
 	List<String> getAllFaculties();
 
-	@Query("from LessonCell as lc where lc.group = ?1 and lc.faculty = ?2 order by lc.dayOfWeek, lc.columnPosition")
-	List<LessonCell> getAllByGroupAndFaculty(String group, String faculty);
+	@Query("from LessonCell as lc where lc.group = ?1 and lc.faculty = ?2 and lc.semester = ?3 order by lc.dayOfWeek, lc.columnPosition")
+	List<LessonCell> getAllByGroupAndFaculty(String group, String faculty, int semester);
 
 	@Query("select new com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult(" +
 		"lc.level, lc.group, case when sum(lc.subgroup)>0 then lc.countOfSubgroups else 0 end, lc.course) " +
-		"from LessonCell as lc where lc.faculty = ?1 group by lc.group, lc.countOfSubgroups, lc.level, lc.course " +
-		"order by lc.group")
-	List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups(String faculty);
+		"from LessonCell as lc where lc.faculty = ?1 and lc.semester = ?2 group by lc.group, lc.countOfSubgroups, " +
+		"lc.level, lc.course order by lc.group")
+	List<FindGroupsAndSubgroupsResult> findGroupsAndSubgroups(String faculty, int semester);
 
 	@Query("from LessonCell as lc where lc.teacherName = ?1 order by lc.dayOfWeek, lc.columnPosition")
 	List<LessonCell> getAllByTeacherName(String teacherName);

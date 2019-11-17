@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,8 +66,8 @@ public class LessonCellServiceImpl implements LessonCellService {
 	}
 
 	@Override
-	public List<DaySchedule> getReadySchedules(String faculty, String group, Date from, Integer days) {
-		List<LessonCell> allCells = this.getAllByGroup(group, faculty);
+	public List<DaySchedule> getReadySchedules(String faculty, String group, int semester, Date from, Integer days) {
+		List<LessonCell> allCells = this.getAllByGroup(group, faculty, semester);
 		WeekSign weekSign = weekSignComponent.getWeekSign(from, faculty);
 		return convertToReadySchedule(allCells, weekSign, from, days);
 	}
@@ -87,9 +88,9 @@ public class LessonCellServiceImpl implements LessonCellService {
 	}
 
 	@Override
-	public List<GroupInfo> findGroupsAndSubgroups(String faculty) {
+	public List<GroupInfo> findGroupsAndSubgroups(String faculty, int semester) {
 		List<GroupInfo> groupInfos = new ArrayList<>();
-		for (FindGroupsAndSubgroupsResult result : repository.findGroupsAndSubgroups(faculty)) {
+		for (FindGroupsAndSubgroupsResult result : repository.findGroupsAndSubgroups(faculty, semester)) {
 			GroupInfo groupInfo = new GroupInfo();
 			groupInfo.setName(result.getGroup());
 			groupInfo.setCourse(result.getCourse());
@@ -114,13 +115,19 @@ public class LessonCellServiceImpl implements LessonCellService {
 	}
 
 	@Override
-	public List<LessonCell> getAllByGroup(String group, String faculty) {
-		return repository.getAllByGroupAndFaculty(group, faculty);
+	public List<LessonCell> getAllByGroup(String group, String faculty, int semester) {
+		return repository.getAllByGroupAndFaculty(group, faculty, semester);
 	}
 
 	@Override
 	public Iterable<LessonCell> saveAll(Collection<LessonCell> collection) {
 		return repository.saveAll(collection);
+	}
+
+	@Override
+	public int getCurrentSemester(String facultyId) {
+		List<Integer> semesters = repository.getAllSemestersByFaculty(facultyId);
+		return semesters.stream().max(Comparator.naturalOrder()).orElse(LocalDateTime.now().getYear() * 2);
 	}
 
 	@Override

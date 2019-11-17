@@ -55,8 +55,12 @@ public class FacultyController {
 		@PathVariable String facultyId,
 		@ApiParam(value = "Include LessonCells (use with caution!)")
 		@RequestParam(name = "full_table", required = false, defaultValue = "false")
-			Boolean fullTable) {
-		List<GroupInfo> results = service.findGroupsAndSubgroups(facultyId);
+			Boolean fullTable,
+		@RequestParam(name = "semester", required = false, defaultValue = "-1") Integer semester) {
+		if (semester < 0) {
+			semester = service.getCurrentSemester(facultyId);
+		}
+		List<GroupInfo> results = service.findGroupsAndSubgroups(facultyId, semester);
 		GetGroupsResponse response = new GetGroupsResponse();
 		response.setGroups(new ArrayList<>());
 		for (GroupInfo result : results) {
@@ -64,7 +68,7 @@ public class FacultyController {
 				result.getLevel().getDeserializationName(),
 				result.getName(),
 				result.getSubgroups(), result.getCourse(),
-				fullTable != null && fullTable ? service.getAllByGroup(result.getName(), facultyId)
+				fullTable != null && fullTable ? service.getAllByGroup(result.getName(), facultyId, semester)
 					.stream().map(LessonCellMirror::convert).collect(Collectors.toList()) : null
 			));
 		}
@@ -73,8 +77,12 @@ public class FacultyController {
 
 	@GetMapping(path = "/{facultyId}/groups/{groupId:.+}")
 	@ApiOperation(value = "Get raw schedule of group", notes = "Provides list of groups and additional info about them.")
-	public ResponseEntity<List<LessonCellMirror>> getSchedule(@PathVariable String groupId, @PathVariable String facultyId) {
-		List<LessonCell> cells = service.getAllByGroup(groupId, facultyId);
+	public ResponseEntity<List<LessonCellMirror>> getSchedule(@PathVariable String groupId, @PathVariable String facultyId,
+	                                                          @RequestParam(name = "semester", required = false, defaultValue = "-1") Integer semester) {
+		if (semester < 0) {
+			semester = service.getCurrentSemester(facultyId);
+		}
+		List<LessonCell> cells = service.getAllByGroup(groupId, facultyId, semester);
 		return ResponseEntity.ok(cells.stream().map(LessonCellMirror::convert).collect(Collectors.toList()));
 	}
 
@@ -86,9 +94,13 @@ public class FacultyController {
 		@ApiParam(value = "ISO Date Format, yyyy-MM-dd", example = "2019-12-28")
 		@RequestParam(name = "day", required = false)
 		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-		@Valid Date date) {
+		@Valid Date date,
+		@RequestParam(name = "semester", required = false, defaultValue = "-1") Integer semester) {
+		if (semester < 0) {
+			semester = service.getCurrentSemester(facultyId);
+		}
 		date = date == null ? new Date() : date;
-		List<DaySchedule> daySchedules = service.getReadySchedules(facultyId, groupId, date, 7);
+		List<DaySchedule> daySchedules = service.getReadySchedules(facultyId, groupId, semester, date, 7);
 		GetScheduleForWeekResponse response = new GetScheduleForWeekResponse();
 		for (DaySchedule daySchedule : daySchedules) {
 			GetScheduleForWeekResponse.Schedule schedule = new GetScheduleForWeekResponse.Schedule();

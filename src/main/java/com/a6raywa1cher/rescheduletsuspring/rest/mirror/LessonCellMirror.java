@@ -12,6 +12,8 @@ import java.time.LocalTime;
 public class LessonCellMirror {
 //	private String externalId;
 
+	private int semester;
+
 	private WeekSign weekSign;
 
 	private String fullSubjectName;
@@ -47,6 +49,7 @@ public class LessonCellMirror {
 	@SuppressWarnings("DuplicatedCode")
 	public static LessonCellMirror convert(LessonCell cell) {
 		LessonCellMirror mirror = new LessonCellMirror();
+		mirror.setSemester(cell.getSemester());
 		mirror.setWeekSign(cell.getWeekSign());
 		mirror.setFullSubjectName(cell.getFullSubjectName());
 		mirror.setShortSubjectName(cell.getShortSubjectName());

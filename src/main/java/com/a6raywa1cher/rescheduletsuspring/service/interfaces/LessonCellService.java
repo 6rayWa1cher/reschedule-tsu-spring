@@ -12,21 +12,23 @@ import java.util.Set;
 public interface LessonCellService {
 	Set<LessonCell> getAll();
 
-	List<DaySchedule> getReadySchedules(String faculty, String group, Date from, Integer days);
+	List<DaySchedule> getReadySchedules(String faculty, String group, int semester, Date from, Integer days);
 
 	List<LessonCell> getTeacherRaw(String teacherName);
 
 	List<DaySchedule> getReadyTeacherSchedules(String teacherName, Date from, Integer days);
 
-	List<GroupInfo> findGroupsAndSubgroups(String faculty);
+	List<GroupInfo> findGroupsAndSubgroups(String faculty, int semester);
 
 	List<String> getTeachersWithName(String teacherName);
 
 	List<String> getAllFaculties();
 
-	List<LessonCell> getAllByGroup(String group, String faculty);
+	List<LessonCell> getAllByGroup(String group, String faculty, int semester);
 
 	Iterable<LessonCell> saveAll(Collection<LessonCell> collection);
+
+	int getCurrentSemester(String facultyId);
 
 	void deleteAll(Collection<LessonCell> collection);
 }
