@@ -7,14 +7,17 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.net.URI;
+import java.nio.file.Path;
+
 @Configuration
 public class TsuDbImporterConfig {
 	@Bean
 	public ImportStrategy importStrategy(TsuDbImporterConfigProperties config, RestTemplateBuilder builder) {
 		if (config.getImportSource().equals("file")) {
-			return new FileImportStrategy(config);
+			return new FileImportStrategy(Path.of(config.getCachePath()));
 		} else {
-			return new NetworkImportStrategy(builder, config);
+			return new NetworkImportStrategy(builder, URI.create(config.getPath()), Path.of(config.getCachePath()));
 		}
 	}
 }

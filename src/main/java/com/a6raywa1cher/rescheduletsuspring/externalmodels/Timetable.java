@@ -22,7 +22,7 @@ public class Timetable {
 
 	private OffsetDateTime end; // time in ISO-8601 like 2019-01-01T20:20:39.000Z
 
-	@IdExternal(url = "times", toSetter = "setTimeSchedule", clazz = TimeSchedule.class)
+	@IdExternal(url = "times", toSetter = "setTimeSchedule", clazz = TimeSchedule.class, mutable = true)
 	private String time; // id->timeSchedule
 
 	private List<TimetableCell> cells;

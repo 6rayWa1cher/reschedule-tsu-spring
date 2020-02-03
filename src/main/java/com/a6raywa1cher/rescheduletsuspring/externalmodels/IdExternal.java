@@ -10,4 +10,6 @@ public @interface IdExternal {
 	String toSetter();
 
 	Class<?> clazz();
+
+	boolean mutable() default false;
 }

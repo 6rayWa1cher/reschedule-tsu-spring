@@ -108,6 +108,13 @@ public class TsuDbImporterComponent {
 		// Step 1: load all seasons
 		log.info("Starting importing");
 		List<Season> seasons;
+		if (overrideCache) {
+			try {
+				strategy.dropCache();
+			} catch (IOException e) {
+				throw new ImportException("Drop cache error", e);
+			}
+		}
 		try {
 			String allSeasonsRaw = strategy.load("timetables", true);
 			seasons = objectMapper.readValue(allSeasonsRaw, new TypeReference<List<Season>>() {
@@ -126,6 +133,7 @@ public class TsuDbImporterComponent {
 		Stack<Object> stack = new Stack<>();
 		stack.addAll(filteredSeasons);
 		int counter = 0;
+		Set<String> reloadedMutableObjects = new HashSet<>();
 		while (!stack.empty()) {
 			Object o = stack.pop();
 			counter++;
@@ -141,7 +149,15 @@ public class TsuDbImporterComponent {
 				try {
 					Object info = pi.infoGetter.invoke(o);
 					if (info != null) {
-						String rawData = strategy.load(pi.annotation.url() + '/' + info.toString(), overrideCache);
+						String path = pi.annotation.url() + '/' + info.toString();
+						boolean mutable = pi.annotation.mutable();
+						String rawData;
+						if (mutable && !reloadedMutableObjects.contains(path)) {
+							rawData = strategy.load(path, true);
+							reloadedMutableObjects.add(path);
+						} else {
+							rawData = strategy.load(path, false);
+						}
 						Object o1 = objectMapper.readValue(rawData, pi.getAnnotation().clazz());
 						pi.dataSetter.invoke(o, o1);
 					}
@@ -181,6 +197,7 @@ public class TsuDbImporterComponent {
 				}
 			}
 		}
+		reloadedMutableObjects.clear();
 		log.info("Imported {} items", counter);
 		// Step 3: convert data to LessonCell
 		Set<LessonCell> preparedCells = new HashSet<>();
@@ -235,6 +252,9 @@ public class TsuDbImporterComponent {
 							}
 							lessonCell.setLevel(timetable.getDirection().getLevel());
 							lessonCell.setCourse(timetable.getCourse());
+							if (timetable.getGroupName() == null) {
+								continue;
+							}
 							lessonCell.setGroup(timetable.getGroupName().replace('"', '\''));
 							lessonCell.setSubgroup(lesson.getSubgroup());
 							lessonCell.setCountOfSubgroups(timetable.getSubgroups().size());

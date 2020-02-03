@@ -1,6 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
-import com.a6raywa1cher.rescheduletsuspring.config.TsuDbImporterConfigProperties;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -19,27 +19,29 @@ import java.nio.file.Path;
 public class NetworkImportStrategy implements ImportStrategy {
 	private static final Logger log = LoggerFactory.getLogger(NetworkImportStrategy.class);
 	private RestTemplate restTemplate;
-	private TsuDbImporterConfigProperties properties;
+	private URI networkPath;
+	private Path cachePath;
 
-	public NetworkImportStrategy(RestTemplateBuilder restTemplateBuilder, TsuDbImporterConfigProperties properties) {
+	public NetworkImportStrategy(RestTemplateBuilder restTemplateBuilder, URI networkPath, Path cachePath) {
 		restTemplate = restTemplateBuilder.build();
-		this.properties = properties;
+		this.networkPath = networkPath;
+		this.cachePath = cachePath;
 	}
 
 	@Override
 	public String load(String path, boolean overrideCache) throws IOException {
-		Path cache = Path.of(properties.getCachePath(), path);
+		Path cache = cachePath.resolve(path);
 		if (!cache.toFile().getParentFile().exists()) {
 			Files.createDirectories(cache.toFile().getParentFile().toPath());
 		}
 		if (!cache.toFile().exists() || overrideCache) {
-			URI uri = URI.create(properties.getPath()).resolve(path);
+			URI uri = networkPath.resolve(path);
 			log.info("Requesting {}", uri);
 			ResponseEntity<String> responseEntity = restTemplate.getForEntity(
-					uri, String.class);
+				uri, String.class);
 			if (!responseEntity.getStatusCode().is2xxSuccessful()) {
 				throw new IOException(String.format("Wrong result. Path: %s, Code:%d, content:%s",
-						path, responseEntity.getStatusCodeValue(), responseEntity.getBody()));
+					path, responseEntity.getStatusCodeValue(), responseEntity.getBody()));
 			}
 			try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(cache.toFile()))) {
 				writer.append(responseEntity.getBody());
@@ -53,5 +55,12 @@ public class NetworkImportStrategy implements ImportStrategy {
 				return new String(bytes);
 			}
 		}
+	}
+
+	@Override
+	public void dropCache() throws IOException {
+		log.info("Requested to drop cache...");
+		FileUtils.cleanDirectory(cachePath.toFile());
+		log.info("Successfully dropped cache!");
 	}
 }

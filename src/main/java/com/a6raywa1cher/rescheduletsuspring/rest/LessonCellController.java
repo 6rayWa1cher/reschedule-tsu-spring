@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.transaction.Transactional;
 
 @Controller
@@ -42,8 +43,9 @@ public class LessonCellController {
 	public ResponseEntity<?> forceUpdate(
 		@RequestHeader(name = HttpHeaders.AUTHORIZATION) String authorization,
 		@RequestParam(required = false, name = "override_cache", defaultValue = "false")
-			Boolean overrideCache) throws ImportException {
+			Boolean overrideCache, HttpServletRequest request) throws ImportException {
 		if (!appConfigProperties.getAdminToken().equals(authorization)) {
+			log.warn("Attack attempt. ip:{}", request.getRemoteAddr());
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
 		}
 		try {
