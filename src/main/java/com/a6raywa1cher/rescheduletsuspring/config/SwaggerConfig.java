@@ -1,21 +1,23 @@
 package com.a6raywa1cher.rescheduletsuspring.config;
 
 import com.fasterxml.classmate.TypeResolver;
+import com.google.common.base.Predicates;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.Authentication;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.ApiKey;
-import springfox.documentation.service.SecurityScheme;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,7 +34,7 @@ public class SwaggerConfig {
 	@Bean
 	public Docket api(TypeResolver typeResolver) {
 		List<SecurityScheme> schemeList = new ArrayList<>();
-		schemeList.add(new ApiKey("JWT", "jwt", "header"));
+		schemeList.add(new BasicAuth("Realm"));
 		ApiInfo apiInfo = new ApiInfoBuilder()
 			.title("reschedule-tsu-spring")
 			.version(buildProperties.getVersion())
@@ -45,12 +47,11 @@ public class SwaggerConfig {
 			.produces(Collections.singleton("application/json"))
 			.consumes(Collections.singleton("application/json"))
 			.host("")
-//				.ignoredParameterTypes(Authentication.class)
+			.ignoredParameterTypes(Authentication.class)
 			.securitySchemes(schemeList)
 			.useDefaultResponseMessages(true)
 			.apiInfo(apiInfo)
-//				.additionalModels(typeResolver.resolve(UploadScriptDTO.class))
-//				.securityContexts(Arrays.asList(securityContext(), commentsSecurityContext()))
+			.securityContexts(Arrays.asList(securityContext()))
 			.select()
 //				.apis(Predicates.or(
 //						Predicates.not(RequestHandlerSelectors.basePackage("org.springframework.boot")),
@@ -61,31 +62,21 @@ public class SwaggerConfig {
 			.build();
 	}
 
-//	private SecurityContext securityContext() {
-//		//noinspection Guava
-//		return SecurityContext.builder()
-//				.securityReferences(defaultAuth())
-//				.forPaths(Predicates.not(Predicates.or(
-//						PathSelectors.ant("/auth/login"),
-//						PathSelectors.ant("/user/reg"),
-//						PathSelectors.ant("/comment/**"))))
-//				.build();
-//	}
-//
-//	private SecurityContext commentsSecurityContext() {
-//		//noinspection Guava
-//		return SecurityContext.builder()
-//				.securityReferences(defaultAuth())
-//				.forPaths(PathSelectors.ant("/comment/**"))
-//				.forHttpMethods(Predicates.not(http -> http != null && http.matches("GET")))
-//				.build();
-//	}
-//
-//	private List<SecurityReference> defaultAuth() {
-//		AuthorizationScope authorizationScope
-//				= new AuthorizationScope("global", "accessEverything");
-//		AuthorizationScope[] authorizationScopes = new AuthorizationScope[]{authorizationScope};
-//		return Collections.singletonList(
-//				new SecurityReference("JWT", authorizationScopes));
-//	}
+	private SecurityContext securityContext() {
+		//noinspection Guava
+		return SecurityContext.builder()
+			.securityReferences(defaultAuth())
+			.forPaths(Predicates.or(
+				PathSelectors.ant("/user/**"),
+				PathSelectors.ant("/cells/**")))
+			.build();
+	}
+
+	private List<SecurityReference> defaultAuth() {
+		AuthorizationScope authorizationScope
+			= new AuthorizationScope("global", "accessEverything");
+		AuthorizationScope[] authorizationScopes = new AuthorizationScope[]{authorizationScope};
+		return Collections.singletonList(
+			new SecurityReference("Realm", authorizationScopes));
+	}
 }

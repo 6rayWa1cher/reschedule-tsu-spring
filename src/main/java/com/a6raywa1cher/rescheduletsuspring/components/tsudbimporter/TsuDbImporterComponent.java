@@ -4,6 +4,7 @@ import com.a6raywa1cher.rescheduletsuspring.config.TsuDbImporterConfigProperties
 import com.a6raywa1cher.rescheduletsuspring.externalmodels.*;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
+import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinates;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class TsuDbImporterComponent {
@@ -273,9 +275,9 @@ public class TsuDbImporterComponent {
 			}
 		}
 		// Step 4: set CrossPair flags and set times, if it's not presented
-		Map<CrossPairLessonCell, LessonCell> firstOccurrences = new HashMap<>();
+		Map<CrossPairLessonCellCoordinates, LessonCell> firstOccurrences = new HashMap<>();
 		for (LessonCell lessonCell : preparedCells) {
-			CrossPairLessonCell crossPair = CrossPairLessonCell.convert(lessonCell);
+			CrossPairLessonCellCoordinates crossPair = CrossPairLessonCellCoordinates.convert(lessonCell);
 			if (firstOccurrences.containsKey(crossPair)) {
 				firstOccurrences.get(crossPair).setCrossPair(true);
 				lessonCell.setCrossPair(true);
@@ -302,39 +304,93 @@ public class TsuDbImporterComponent {
 			Map<String, LessonCell> idToCellInDb = allCellsInDb.stream()
 				.collect(Collectors.toMap(LessonCell::getExternalId, Function.identity()));
 			// catch updated LessonCells
-			Set<LessonCell> intersection = preparedCells.stream()
+			Set<LessonCell> localCellsToMakePatches = preparedCells.stream()
 				.filter(lessonCell -> idToCellInDb.containsKey(lessonCell.getExternalId()))
 				.collect(Collectors.toSet());
-			Set<LessonCell> toPull = new HashSet<>();
-			Set<LessonCell> remainingPreparedCells = new HashSet<>(preparedCells);
+			Set<LessonCell> localUpdatedLessonCell = new HashSet<>();
+			Set<LessonCell> localNewLessonCells = new HashSet<>(preparedCells);
 			Set<LessonCell> remainingDbCells = new HashSet<>(allCellsInDb);
-			for (LessonCell preparedCell : intersection) {
+			for (LessonCell preparedCell : localCellsToMakePatches) {
 				LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
 				remainingDbCells.remove(inDb);
-				remainingPreparedCells.remove(preparedCell);
-				inDb.setWeekSign(preparedCell.getWeekSign());
-				inDb.setFullSubjectName(preparedCell.getFullSubjectName());
-				inDb.setShortSubjectName(preparedCell.getShortSubjectName());
-				inDb.setTeacherName(preparedCell.getTeacherName());
-				inDb.setTeacherTitle(preparedCell.getTeacherTitle());
-				inDb.setDayOfWeek(preparedCell.getDayOfWeek());
-				inDb.setColumnPosition(preparedCell.getColumnPosition());
-				inDb.setStart(preparedCell.getStart());
-				inDb.setEnd(preparedCell.getEnd());
-				inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
-				inDb.setLevel(preparedCell.getLevel());
-				inDb.setCourse(preparedCell.getCourse());
-				inDb.setGroup(preparedCell.getGroup());
-				inDb.setSubgroup(preparedCell.getSubgroup());
-				inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());
-				inDb.setCrossPair(preparedCell.getCrossPair());
-				inDb.setFaculty(preparedCell.getFaculty());
-				toPull.add(inDb);
+				localNewLessonCells.remove(preparedCell);
+//				inDb.setWeekSign(preparedCell.getWeekSign());
+//				inDb.setFullSubjectName(preparedCell.getFullSubjectName());
+//				inDb.setShortSubjectName(preparedCell.getShortSubjectName());
+//				inDb.setTeacherName(preparedCell.getTeacherName());
+//				inDb.setTeacherTitle(preparedCell.getTeacherTitle());
+//				inDb.setDayOfWeek(preparedCell.getDayOfWeek());
+//				inDb.setColumnPosition(preparedCell.getColumnPosition());
+//				inDb.setStart(preparedCell.getStart());
+//				inDb.setEnd(preparedCell.getEnd());
+//				inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
+//				inDb.setLevel(preparedCell.getLevel());
+//				inDb.setCourse(preparedCell.getCourse());
+//				inDb.setGroup(preparedCell.getGroup());
+//				inDb.setSubgroup(preparedCell.getSubgroup());
+//				inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());
+//				inDb.setCrossPair(preparedCell.getCrossPair());
+//				inDb.setFaculty(preparedCell.getFaculty());
+				inDb.transfer(preparedCell);
+				localUpdatedLessonCell.add(inDb);
 			}
-			lessonCellService.saveAll(toPull);
-			lessonCellService.saveAll(remainingPreparedCells);
+			// Step 5.1: user-created LessonCells
+			// if ignoreExternalDb and ignoreExternalDbHashCode == null, block external db's identical cell.
+			// if ignoreExternalDb and ignoreExternalDbHashCode != null, check cell's hash code. if
+			//    hashCode != ignoreExternalDbHashCode, drop user-created. Otherwise block external db's cell.
+			// if not ignoreExternalDb and external db contains identical cell, drop user-created.
+			//    Otherwise remain user-created.
+			Set<LessonCell> userMadeCells = remainingDbCells.stream()
+				.filter(lessonCell -> lessonCell.getCreator() != null)
+				.collect(Collectors.toSet());
+			remainingDbCells.removeAll(userMadeCells);
+			Map<LessonCellCoordinates, LessonCell> userMadeCellsCoordinates = userMadeCells.stream()
+				.collect(Collectors.toMap(LessonCellCoordinates::convert, Function.identity()));
+			Map<LessonCellCoordinates, List<LessonCell>> importedCellsCoordinates = Stream.concat(localUpdatedLessonCell.stream(),
+				localNewLessonCells.stream())
+				.collect(Collectors.toMap(LessonCellCoordinates::convert,
+					cell -> new LinkedList<>(Collections.singletonList(cell)),
+					(l1, l2) -> {
+						l1.addAll(l2);
+						l2.clear();
+						return l1;
+					}
+				));
+			assert userMadeCellsCoordinates.size() == userMadeCells.size();
+			Set<LessonCellCoordinates> coordinatesIntersection = userMadeCellsCoordinates.keySet().stream()
+				.filter(importedCellsCoordinates::containsKey)
+				.collect(Collectors.toSet());
+			for (LessonCellCoordinates intersection : coordinatesIntersection) {
+				LessonCell userCreated = userMadeCellsCoordinates.get(intersection);
+				List<LessonCell> importedCell = importedCellsCoordinates.get(intersection);
+				if (userCreated.getIgnoreExternalDb()) {
+					if (userCreated.getIgnoreExternalDbHashCode() != null) {
+						String importedCellHashCodeCompilation = importedCell.stream()
+							.map(LessonCell::hashCode)
+							.sorted()
+							.map(hc -> Integer.toString(hc))
+							.collect(Collectors.joining(","));
+						if (!importedCellHashCodeCompilation.equals(userCreated.getIgnoreExternalDbHashCode())) {
+							remainingDbCells.add(userCreated);
+						} else {
+							localNewLessonCells.removeAll(importedCell);
+							localUpdatedLessonCell.removeAll(importedCell);
+						}
+					} else {
+						localNewLessonCells.removeAll(importedCell);
+						localUpdatedLessonCell.removeAll(importedCell);
+					}
+				} else {
+					remainingDbCells.add(userCreated);
+				}
+			}
+			lessonCellService.saveAll(localUpdatedLessonCell);
+			lessonCellService.saveAll(localNewLessonCells);
 			lessonCellService.deleteAll(remainingDbCells);
-			log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", remainingPreparedCells.size(), toPull.size(), remainingDbCells.size());
+			log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", localNewLessonCells.size(), localUpdatedLessonCell.size(), remainingDbCells.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
 		} finally {
 			this.isUpdatingLocalDatabase.set(false);
 		}

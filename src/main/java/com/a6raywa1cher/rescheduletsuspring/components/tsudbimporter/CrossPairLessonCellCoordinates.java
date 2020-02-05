@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.DayOfWeek;
 
 @Data
-public class CrossPairLessonCell {
+public class CrossPairLessonCellCoordinates {
 	private String facultyId;
 
 	private WeekSign weekSign;
@@ -18,8 +18,8 @@ public class CrossPairLessonCell {
 
 	private String teacherName;
 
-	public static CrossPairLessonCell convert(LessonCell cell) {
-		CrossPairLessonCell crossPair = new CrossPairLessonCell();
+	public static CrossPairLessonCellCoordinates convert(LessonCell cell) {
+		CrossPairLessonCellCoordinates crossPair = new CrossPairLessonCellCoordinates();
 		crossPair.setFacultyId(cell.getFaculty());
 		crossPair.setWeekSign(cell.getWeekSign());
 		crossPair.setDayOfWeek(cell.getDayOfWeek());

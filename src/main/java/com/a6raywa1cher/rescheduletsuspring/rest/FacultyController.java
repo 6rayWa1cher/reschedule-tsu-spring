@@ -3,6 +3,7 @@ package com.a6raywa1cher.rescheduletsuspring.rest;
 import com.a6raywa1cher.rescheduletsuspring.components.weeksign.WeekSignComponent;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.LessonCellMirror;
+import com.a6raywa1cher.rescheduletsuspring.rest.mirror.View;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetFacultiesResponse;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetGroupsResponse;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetScheduleForWeekResponse;
@@ -10,6 +11,7 @@ import com.a6raywa1cher.rescheduletsuspring.rest.response.GetWeekSignResponse;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.DaySchedule;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.GroupInfo;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
@@ -73,6 +75,7 @@ public class FacultyController {
 
 	@GetMapping(path = "/{facultyId}/groups/{groupId:.+}")
 	@ApiOperation(value = "Get raw schedule of group", notes = "Provides list of groups and additional info about them.")
+	@JsonView(View.Public.class)
 	public ResponseEntity<List<LessonCellMirror>> getSchedule(@PathVariable String groupId, @PathVariable String facultyId) {
 		List<LessonCell> cells = service.getAllByGroup(groupId, facultyId);
 		return ResponseEntity.ok(cells.stream().map(LessonCellMirror::convert).collect(Collectors.toList()));
@@ -81,6 +84,7 @@ public class FacultyController {
 	@GetMapping(path = "/{facultyId}/groups/{groupId:.+}/week")
 	@ApiOperation(value = "Get ready-to-go schedule for 7 days",
 		notes = "Provides schedule of certain group for 7 working days.")
+	@JsonView(View.Public.class)
 	public ResponseEntity<GetScheduleForWeekResponse> getScheduleForWeek(
 		@PathVariable String facultyId, @PathVariable String groupId,
 		@ApiParam(value = "ISO Date Format, yyyy-MM-dd", example = "2019-12-28")

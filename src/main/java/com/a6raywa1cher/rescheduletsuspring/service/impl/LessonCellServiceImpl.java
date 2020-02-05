@@ -2,14 +2,19 @@ package com.a6raywa1cher.rescheduletsuspring.service.impl;
 
 import com.a6raywa1cher.rescheduletsuspring.components.weeksign.WeekSignComponent;
 import com.a6raywa1cher.rescheduletsuspring.dao.repository.LessonCellRepository;
+import com.a6raywa1cher.rescheduletsuspring.dao.results.CreatorAndCountPair;
 import com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult;
 import com.a6raywa1cher.rescheduletsuspring.dao.results.FindTeacherResult;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
+import com.a6raywa1cher.rescheduletsuspring.models.User;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
+import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinates;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.DaySchedule;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.GroupInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +23,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class LessonCellServiceImpl implements LessonCellService {
@@ -62,6 +68,16 @@ public class LessonCellServiceImpl implements LessonCellService {
 	@Override
 	public Set<LessonCell> getAll() {
 		return repository.getAllBy();
+	}
+
+	@Override
+	public Optional<LessonCell> getById(String id) {
+		return repository.findById(id);
+	}
+
+	@Override
+	public Page<LessonCell> getByUser(User user, Pageable pageable) {
+		return repository.getAllByCreator(user, pageable);
 	}
 
 	@Override
@@ -116,6 +132,34 @@ public class LessonCellServiceImpl implements LessonCellService {
 	@Override
 	public List<LessonCell> getAllByGroup(String group, String faculty) {
 		return repository.getAllByGroupAndFaculty(group, faculty);
+	}
+
+	@Override
+	public LessonCell addUserCell(LessonCell cell, boolean ignoreLastExternalDbRecord) {
+		List<LessonCell> lessonCells = repository.getAllByLessonCellCoordinates(LessonCellCoordinates.convert(cell))
+			.collect(Collectors.toList());
+		String hashCode = lessonCells.stream()
+			.map(LessonCell::hashCode)
+			.sorted()
+			.map(hc -> Integer.toString(hc))
+			.collect(Collectors.joining(","));
+		if (ignoreLastExternalDbRecord) {
+			cell.setIgnoreExternalDbHashCode(hashCode);
+		}
+		repository.deleteAll(lessonCells);
+		return repository.save(cell);
+	}
+
+	@Override
+	public Stream<LessonCell> getByLessonCellCoordinates(LessonCellCoordinates coordinates) {
+		return repository.getAllByLessonCellCoordinates(coordinates);
+	}
+
+	@Override
+	public Map<String, Long> getLeaderBoard() {
+		List<CreatorAndCountPair> pairs = repository.getTopList();
+		return pairs.stream()
+			.collect(Collectors.toMap(p -> p.getCreator().getUsername(), CreatorAndCountPair::getCount));
 	}
 
 	@Override

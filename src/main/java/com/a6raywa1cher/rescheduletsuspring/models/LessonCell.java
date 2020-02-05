@@ -2,6 +2,8 @@ package com.a6raywa1cher.rescheduletsuspring.models;
 
 import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -12,7 +14,9 @@ import java.time.LocalTime;
 @Table(name = "lesson_cell", indexes = {
 	@Index(columnList = "faculty,group", name = "Get_for_group")
 })
-public class LessonCell {
+@EqualsAndHashCode(exclude = "creator")
+@ToString(exclude = "creator")
+public class LessonCell implements LessonCellInfoHolder {
 	@Id
 	private String externalId;
 
@@ -69,4 +73,13 @@ public class LessonCell {
 
 	@Column(nullable = false)
 	private String faculty;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	private User creator;
+
+	@Column
+	private Boolean ignoreExternalDb;
+
+	@Column
+	private String ignoreExternalDbHashCode;
 }

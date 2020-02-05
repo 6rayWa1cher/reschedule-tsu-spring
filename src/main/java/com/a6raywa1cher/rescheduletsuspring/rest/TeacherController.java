@@ -1,11 +1,13 @@
 package com.a6raywa1cher.rescheduletsuspring.rest;
 
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.LessonCellMirror;
+import com.a6raywa1cher.rescheduletsuspring.rest.mirror.View;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetScheduleOfTeacherForWeekResponse;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetScheduleOfTeacherResponse;
 import com.a6raywa1cher.rescheduletsuspring.rest.response.GetTeachersResponse;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.DaySchedule;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 @Controller
 @CrossOrigin
 @RequestMapping("/teachers")
+@JsonView(View.Public.class)
 public class TeacherController {
 	private static final Logger log = LoggerFactory.getLogger(TeacherController.class);
 	private LessonCellService service;
