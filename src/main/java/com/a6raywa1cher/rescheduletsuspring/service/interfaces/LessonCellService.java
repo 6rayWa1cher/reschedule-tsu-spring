@@ -36,8 +36,6 @@ public interface LessonCellService {
 
 	Stream<LessonCell> getByLessonCellCoordinates(LessonCellCoordinates coordinates);
 
-	Map<String, Long> getLeaderBoard();
-
 	Iterable<LessonCell> saveAll(Collection<LessonCell> collection);
 
 	void deleteAll(Collection<LessonCell> collection);

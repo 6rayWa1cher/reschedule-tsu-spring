@@ -50,7 +50,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 			.authorizeRequests()
 			.antMatchers("/").permitAll()
 			.antMatchers("/user").hasRole("USER")
-			.antMatchers("/user/reg").hasRole("ADMIN")
+			.antMatchers("/user/reg", "/user/delete_user").hasRole("ADMIN")
 			.antMatchers("/cells").hasRole("USER")
 			.antMatchers("/cells/force", "/cells/delete_sudo").hasRole("ADMIN")
 			.antMatchers("/v2/api-docs", "/webjars/**", "/swagger-resources", "/swagger-resources/**",

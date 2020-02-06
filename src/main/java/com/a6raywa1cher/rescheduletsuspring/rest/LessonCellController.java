@@ -103,9 +103,9 @@ public class LessonCellController {
 		LessonCell lessonCell = new LessonCell();
 		lessonCell.transfer(dto);
 		lessonCell.setCreator(user);
-		return ResponseEntity.ok(LessonCellMirror.convert(
-			lessonCellService.addUserCell(lessonCell, dto.getIgnoreLastExternalDbRecord())
-		));
+		LessonCell addedCell = lessonCellService.addUserCell(lessonCell, dto.getIgnoreLastExternalDbRecord());
+		log.info("User {} added a LessonCell {}", user.getUsername(), lessonCell.toString());
+		return ResponseEntity.ok(LessonCellMirror.convert(addedCell));
 	}
 
 	@GetMapping("/u/{username:[a-zA-Z0-9]{3,35}}/cells")
@@ -142,11 +142,13 @@ public class LessonCellController {
 				.body("Can't delete other user's LessionCell with this command");
 		}
 		lessonCellService.deleteAll(Collections.singleton(cell));
+		log.info("User {} deleted a LessonCell {}", user.getUsername(), cell.toString());
 		return ResponseEntity.ok().build();
 	}
 
 	@DeleteMapping("/delete_sudo")
 	public ResponseEntity<?> deleteCell(@RequestBody @Valid DeleteLessonCellRequest dto) {
+		User user = getUser();
 		Optional<LessonCell> optional = lessonCellService.getById(dto.getId());
 		if (optional.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -156,6 +158,7 @@ public class LessonCellController {
 			return ResponseEntity.badRequest().body("Can't delete a non-user cell");
 		}
 		lessonCellService.deleteAll(Collections.singleton(cell));
+		log.info("User {} deleted with force a LessonCell {}", user.getUsername(), cell.toString());
 		return ResponseEntity.ok().build();
 	}
 }

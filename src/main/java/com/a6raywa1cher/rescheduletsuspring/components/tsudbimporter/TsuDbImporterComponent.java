@@ -1,6 +1,5 @@
 package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
-import com.a6raywa1cher.rescheduletsuspring.config.TsuDbImporterConfigProperties;
 import com.a6raywa1cher.rescheduletsuspring.externalmodels.*;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
@@ -16,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -36,16 +36,24 @@ public class TsuDbImporterComponent {
 	private static final Logger log = LoggerFactory.getLogger(TsuDbImporterComponent.class);
 	private final AtomicBoolean isUpdatingLocalDatabase;
 	private ImportStrategy strategy;
-	private TsuDbImporterConfigProperties properties;
+	private String currentSeason;
+	private String currentSemester;
 	private LessonCellService lessonCellService;
+	private ObjectMapper objectMapper;
 
 	@Autowired
-	public TsuDbImporterComponent(ImportStrategy strategy, TsuDbImporterConfigProperties properties,
+	public TsuDbImporterComponent(ImportStrategy strategy,
+	                              @Value("app.tsudb.current-season") String currentSeason,
+	                              @Value("app.tsudb.current-semester") String currentSemester,
 	                              LessonCellService lessonCellService) {
 		this.strategy = strategy;
-		this.properties = properties;
 		this.lessonCellService = lessonCellService;
 		this.isUpdatingLocalDatabase = new AtomicBoolean(false);
+		this.objectMapper = new ObjectMapper()
+			.registerModule(new Jdk8Module())
+			.registerModule(new JavaTimeModule());
+		this.currentSeason = currentSeason;
+		this.currentSemester = currentSemester;
 	}
 
 	private Set<PropertyInfo<IdExternal>> findAnnotatedWithIdExternal(Class<?> clazz) {
@@ -102,13 +110,37 @@ public class TsuDbImporterComponent {
 		return timeSchedule;
 	}
 
-	@SuppressWarnings("DuplicatedCode")
+	/**
+	 * Imports LessonCells from an external database and merges changes with the local database
+	 *
+	 * @param overrideCache ask ImportStrategy to drop cache or not
+	 * @throws ImportException if any error happen during import
+	 */
 	public synchronized void importExternalModels(boolean overrideCache) throws ImportException {
-		ObjectMapper objectMapper = new ObjectMapper()
-			.registerModule(new Jdk8Module())
-			.registerModule(new JavaTimeModule());
-		// Step 1: load all seasons
 		log.info("Starting importing");
+		// Step 1: load all seasons
+		List<Season> seasons = getSeasons(overrideCache);
+		log.info("Seasons loaded");
+		// we don't care about old data
+		List<Season> filteredSeasons = filterSeasons(seasons);
+		// Step 2: find all @IdExternal (id's in Season children to some objects in external db)
+		// and fill fields with data from strategy
+		int counter = crawl(filteredSeasons);
+		log.info("Imported {} items", counter);
+		// Step 3: convert data to LessonCell
+		Set<LessonCell> preparedCells = getLessonCells(filteredSeasons);
+		// Step 4: update local db
+		rebuildDatabase(preparedCells);
+	}
+
+	/**
+	 * Get all Seasons from the ImportStrategy
+	 *
+	 * @param overrideCache flag to drop cache in the ImportStrategy
+	 * @return list of Seasons, raw presentation
+	 * @throws ImportException when IOException occurs
+	 */
+	private List<Season> getSeasons(boolean overrideCache) throws ImportException {
 		List<Season> seasons;
 		if (overrideCache) {
 			try {
@@ -124,14 +156,34 @@ public class TsuDbImporterComponent {
 		} catch (IOException e) {
 			throw new ImportException("Decoding seasons error", e);
 		}
-		log.info("Seasons loaded");
-		// we don't care about old data
-		List<Season> filteredSeasons = seasons.stream()
-			.filter(season -> season.get_id().getYear().equals(properties.getCurrentSeason()))
-			.filter(season -> Objects.equals(season.get_id().getSemester(), properties.getSemester()))
+		return seasons;
+	}
+
+	/**
+	 * Returns filtered Seasons, according to year and semester
+	 *
+	 * @param seasons list of Seasons to be filtered
+	 * @return relevant Seasons
+	 */
+	private List<Season> filterSeasons(List<Season> seasons) {
+		return seasons.stream()
+			.filter(season -> season.get_id().getYear().equals(currentSeason))
+			.filter(season -> Objects.equals(season.get_id().getSemester(), currentSemester))
 			.collect(Collectors.toList());
-		// Step 2: find all @IdExternal (id's in Season children to some objects in external db)
-		// and fill fields with data from strategy
+	}
+
+	/**
+	 * Scans all children-objects at Seasons and fill them with data from an ImportStrategy.
+	 * <p>
+	 * Uses a DFS tree traversal algorithm: a Season is a tree-like object.
+	 * Algorithm search all annotated with @IdExternal fields and tries to fill a related
+	 * field.
+	 *
+	 * @param filteredSeasons seasons to scan and fill
+	 * @return counter of scanned objects
+	 * @throws ImportException when IOException, reflection, cast and logic exception occurs
+	 */
+	private int crawl(List<Season> filteredSeasons) throws ImportException {
 		Stack<Object> stack = new Stack<>();
 		stack.addAll(filteredSeasons);
 		int counter = 0;
@@ -139,13 +191,13 @@ public class TsuDbImporterComponent {
 		while (!stack.empty()) {
 			Object o = stack.pop();
 			counter++;
-			if (counter > 350000) {
+			if (counter > 350000) { // in case of ringing
 				throw new ImportException("Stack is filled with garbage");
 			}
 			if (o == null) continue;
 			Class<?> clazz = o.getClass();
 
-			// Step 2.1: fill data from external ids (load from strategy)
+			// Step 1: fill data from external ids (load from strategy)
 			Set<PropertyInfo<IdExternal>> annotated = findAnnotatedWithIdExternal(clazz);
 			for (PropertyInfo<IdExternal> pi : annotated) {
 				try {
@@ -168,7 +220,7 @@ public class TsuDbImporterComponent {
 				}
 			}
 			if (counter % 500 == 0) log.info("counter:{} class:{}", counter, clazz.toString());
-			// Step 2.2: find next objects (invoke all getters to external models from 'externalmodels' module)
+			// Step 2: find next objects (invoke all getters to external models from 'externalmodels' module)
 			for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(o.getClass())) {
 				Class<?> returnClazz = propertyDescriptor.getPropertyType();
 				if (returnClazz.getModule().equals(o.getClass().getModule())) {
@@ -199,11 +251,19 @@ public class TsuDbImporterComponent {
 				}
 			}
 		}
-		reloadedMutableObjects.clear();
-		log.info("Imported {} items", counter);
-		// Step 3: convert data to LessonCell
+		return counter;
+	}
+
+	/**
+	 * Convert Seasons to valid, database-ready LessonCells
+	 *
+	 * @param filteredSeasons Seasons to convert
+	 * @return set of LessonCell
+	 */
+	private Set<LessonCell> getLessonCells(List<Season> filteredSeasons) {
 		Set<LessonCell> preparedCells = new HashSet<>();
 		Map<String, Map<TimeSchedule, Integer>> defaultTimeScheduleMap = new HashMap<>();
+		// Step 1: convert Seasons to LessonCells
 		for (Season season : filteredSeasons) {
 			for (Timetable timetable : season.getTables()) {
 				for (TimetableCell cell : timetable.getCells()) {
@@ -244,16 +304,15 @@ public class TsuDbImporterComponent {
 							lessonCell.setColumnPosition(cell.getNumber());
 							String faculty = season.get_id().getFaculty().getAbbr();
 							if (timetable.getTimeSchedule() != null) {
-//							defaultTimeScheduleMap.putIfAbsent(season.get_id().getFaculty().getAbbr(), timetable.getTimeSchedule());
 								defaultTimeScheduleMap.putIfAbsent(faculty, new HashMap<>());
 								defaultTimeScheduleMap.get(faculty).putIfAbsent(timetable.getTimeSchedule(), 0);
 								int prev = defaultTimeScheduleMap.get(faculty).get(timetable.getTimeSchedule());
 								defaultTimeScheduleMap.get(faculty).put(timetable.getTimeSchedule(), prev + 1);
-//							String rawTime = timetable.getTimeSchedule().getSchedule().get(cell.getNumber());
 								setTimes(lessonCell, timetable.getTimeSchedule());
 							}
 							lessonCell.setLevel(timetable.getDirection().getLevel());
 							lessonCell.setCourse(timetable.getCourse());
+							// drop non-informative lessons
 							if (timetable.getGroupName() == null) {
 								continue;
 							}
@@ -274,7 +333,7 @@ public class TsuDbImporterComponent {
 				}
 			}
 		}
-		// Step 4: set CrossPair flags and set times, if it's not presented
+		// Step 2: set CrossPair flags and set times, if it's not presented
 		Map<CrossPairLessonCellCoordinates, LessonCell> firstOccurrences = new HashMap<>();
 		for (LessonCell lessonCell : preparedCells) {
 			CrossPairLessonCellCoordinates crossPair = CrossPairLessonCellCoordinates.convert(lessonCell);
@@ -289,10 +348,25 @@ public class TsuDbImporterComponent {
 				setTimes(lessonCell, getMostPopular(defaultTimeScheduleMap.get(lessonCell.getFaculty())));
 			}
 		}
-		firstOccurrences.clear();
-		System.gc();
+		return preparedCells;
+	}
 
-		// Step 5: update local db
+	/**
+	 * Merges local database and new LessonCells.
+	 * <p>
+	 * This method does a lookup of every LessonCell in the local database.
+	 * LessonCell, which origin is an external database, will be overridden by the new
+	 * version or dropped if preparedCells don't contain a correspondent LessonCell.
+	 * User-made LessonCell will be kept or dropped according to with flags ignoreExternalDb
+	 * and ignoreExternalDbHashCode.
+	 * <p>
+	 * The method does not allow concurrent calls.
+	 *
+	 * @param preparedCells LessonCells from external database
+	 * @throws ImportException if the local database is locked by another call or if an
+	 *                         Exception occurs
+	 */
+	private void rebuildDatabase(Set<LessonCell> preparedCells) throws ImportException {
 		// if new LessonCell, save it
 		// if updated LessonCell (db contains entity with same id), update it
 		// if LessonCell from local db hasn't double from external id, delete it
@@ -314,23 +388,6 @@ public class TsuDbImporterComponent {
 				LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
 				remainingDbCells.remove(inDb);
 				localNewLessonCells.remove(preparedCell);
-//				inDb.setWeekSign(preparedCell.getWeekSign());
-//				inDb.setFullSubjectName(preparedCell.getFullSubjectName());
-//				inDb.setShortSubjectName(preparedCell.getShortSubjectName());
-//				inDb.setTeacherName(preparedCell.getTeacherName());
-//				inDb.setTeacherTitle(preparedCell.getTeacherTitle());
-//				inDb.setDayOfWeek(preparedCell.getDayOfWeek());
-//				inDb.setColumnPosition(preparedCell.getColumnPosition());
-//				inDb.setStart(preparedCell.getStart());
-//				inDb.setEnd(preparedCell.getEnd());
-//				inDb.setAuditoryAddress(preparedCell.getAuditoryAddress());
-//				inDb.setLevel(preparedCell.getLevel());
-//				inDb.setCourse(preparedCell.getCourse());
-//				inDb.setGroup(preparedCell.getGroup());
-//				inDb.setSubgroup(preparedCell.getSubgroup());
-//				inDb.setCountOfSubgroups(preparedCell.getCountOfSubgroups());
-//				inDb.setCrossPair(preparedCell.getCrossPair());
-//				inDb.setFaculty(preparedCell.getFaculty());
 				inDb.transfer(preparedCell);
 				localUpdatedLessonCell.add(inDb);
 			}
@@ -356,13 +413,22 @@ public class TsuDbImporterComponent {
 						return l1;
 					}
 				));
-			assert userMadeCellsCoordinates.size() == userMadeCells.size();
 			Set<LessonCellCoordinates> coordinatesIntersection = userMadeCellsCoordinates.keySet().stream()
 				.filter(importedCellsCoordinates::containsKey)
 				.collect(Collectors.toSet());
 			for (LessonCellCoordinates intersection : coordinatesIntersection) {
 				LessonCell userCreated = userMadeCellsCoordinates.get(intersection);
 				List<LessonCell> importedCell = importedCellsCoordinates.get(intersection);
+				String importedCellIds = importedCell.stream()
+					.map(LessonCell::getExternalId)
+					.sorted()
+					.collect(Collectors.joining(","));
+				int intersectionId = new Random().nextInt();
+				String userCreatedId = userCreated.getExternalId();
+				log.info("I{}. Intersection of user-created {} with LessonCells: {}",
+					intersectionId,
+					userCreatedId,
+					importedCellIds);
 				if (userCreated.getIgnoreExternalDb()) {
 					if (userCreated.getIgnoreExternalDbHashCode() != null) {
 						String importedCellHashCodeCompilation = importedCell.stream()
@@ -371,16 +437,33 @@ public class TsuDbImporterComponent {
 							.map(hc -> Integer.toString(hc))
 							.collect(Collectors.joining(","));
 						if (!importedCellHashCodeCompilation.equals(userCreated.getIgnoreExternalDbHashCode())) {
+							log.info("I{}. Drop user-created {}. Reason: user-created has outdated block: {} vs actual {}",
+								intersectionId,
+								userCreatedId,
+								userCreated.getIgnoreExternalDbHashCode(),
+								importedCellHashCodeCompilation);
 							remainingDbCells.add(userCreated);
 						} else {
+							log.info("I{}. Block and drop LessonCells {}. Reason: user-created {} has hashCode-block {}",
+								intersectionId,
+								importedCellIds,
+								userCreatedId,
+								userCreated.getIgnoreExternalDbHashCode());
 							localNewLessonCells.removeAll(importedCell);
 							localUpdatedLessonCell.removeAll(importedCell);
 						}
 					} else {
+						log.info("I{}. Block and drop LessonCells {}. Reason: user-created {} has absolute-block",
+							intersectionId,
+							importedCellIds,
+							userCreatedId);
 						localNewLessonCells.removeAll(importedCell);
 						localUpdatedLessonCell.removeAll(importedCell);
 					}
 				} else {
+					log.info("I{}. Drop user-created {}. Reason: not ignoreExternalDb",
+						intersectionId,
+						userCreatedId);
 					remainingDbCells.add(userCreated);
 				}
 			}
@@ -389,8 +472,8 @@ public class TsuDbImporterComponent {
 			lessonCellService.deleteAll(remainingDbCells);
 			log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", localNewLessonCells.size(), localUpdatedLessonCell.size(), remainingDbCells.size());
 		} catch (Exception e) {
-			e.printStackTrace();
-			throw e;
+			log.error("Error while transferring", e);
+			throw new ImportException("Error while transferring", e);
 		} finally {
 			this.isUpdatingLocalDatabase.set(false);
 		}

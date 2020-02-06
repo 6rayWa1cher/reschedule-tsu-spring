@@ -2,7 +2,6 @@ package com.a6raywa1cher.rescheduletsuspring.service.impl;
 
 import com.a6raywa1cher.rescheduletsuspring.components.weeksign.WeekSignComponent;
 import com.a6raywa1cher.rescheduletsuspring.dao.repository.LessonCellRepository;
-import com.a6raywa1cher.rescheduletsuspring.dao.results.CreatorAndCountPair;
 import com.a6raywa1cher.rescheduletsuspring.dao.results.FindGroupsAndSubgroupsResult;
 import com.a6raywa1cher.rescheduletsuspring.dao.results.FindTeacherResult;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
@@ -153,13 +152,6 @@ public class LessonCellServiceImpl implements LessonCellService {
 	@Override
 	public Stream<LessonCell> getByLessonCellCoordinates(LessonCellCoordinates coordinates) {
 		return repository.getAllByLessonCellCoordinates(coordinates);
-	}
-
-	@Override
-	public Map<String, Long> getLeaderBoard() {
-		List<CreatorAndCountPair> pairs = repository.getTopList();
-		return pairs.stream()
-			.collect(Collectors.toMap(p -> p.getCreator().getUsername(), CreatorAndCountPair::getCount));
 	}
 
 	@Override
