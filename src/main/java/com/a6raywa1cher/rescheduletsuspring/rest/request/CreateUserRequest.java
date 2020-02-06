@@ -4,6 +4,7 @@ import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 @Data
 public class CreateUserRequest {
@@ -12,5 +13,6 @@ public class CreateUserRequest {
 	private String username;
 
 	@NotBlank
+	@Size(max = 1024)
 	private String password;
 }

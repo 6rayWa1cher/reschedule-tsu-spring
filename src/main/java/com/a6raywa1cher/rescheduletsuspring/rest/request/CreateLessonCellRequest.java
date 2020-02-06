@@ -1,11 +1,13 @@
 package com.a6raywa1cher.rescheduletsuspring.rest.request;
 
+import com.a6raywa1cher.rescheduletsuspring.config.WhiteSpaceRemovalDeserializer;
 import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCellInfoHolder;
 import com.a6raywa1cher.rescheduletsuspring.models.User;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import javax.validation.constraints.*;
@@ -20,23 +22,32 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 
 	@NotBlank
 	@Size(max = 255)
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.()]{3,150}")
+	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String fullSubjectName;
 
 	@NotBlank
 	@Size(max = 255)
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.()]{3,150}")
+	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String shortSubjectName;
 
 	@Size(max = 255)
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.]{0,100}")
+	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String teacherName;
 
 	@Size(max = 255)
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.]{0,100}")
+	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String teacherTitle;
 
 	@NotNull
 	private DayOfWeek dayOfWeek;
 
 	@NotNull
-	@PositiveOrZero
+	@Min(0)
+	@Max(9)
 	private Integer columnPosition;
 
 	@NotNull
@@ -47,8 +58,8 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 	private LocalTime end;
 
-	@Pattern(regexp = ".*\\|.*")
-	@Size(max = 15)
+	@Pattern(regexp = "[0-9А-Я]\\|[0-9а-яА-Я ./\\-]{1,20}")
+	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String auditoryAddress;
 
 	@NotNull
@@ -60,7 +71,8 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	private Integer course;
 
 	@NotBlank
-	@Size(max = 255)
+	@Size(max = 150)
+	@Pattern(regexp = "[а-яА-Я, \\-0-9'.(М)]{1,150}")
 	private String group;
 
 	@NotNull
@@ -77,7 +89,8 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	private Boolean crossPair;
 
 	@NotBlank
-	@Size(max = 255)
+	@Size(max = 50)
+	@Pattern(regexp = "[а-яА-Яa-zA-Z, \\-0-9()]{3,50}")
 	private String faculty;
 
 	@NotNull
