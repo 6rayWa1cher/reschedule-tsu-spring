@@ -43,8 +43,8 @@ public class TsuDbImporterComponent {
 
 	@Autowired
 	public TsuDbImporterComponent(ImportStrategy strategy,
-	                              @Value("app.tsudb.current-season") String currentSeason,
-	                              @Value("app.tsudb.current-semester") String currentSemester,
+	                              @Value("${app.tsudb.current-season}") String currentSeason,
+	                              @Value("${app.tsudb.semester}") String currentSemester,
 	                              LessonCellService lessonCellService) {
 		this.strategy = strategy;
 		this.lessonCellService = lessonCellService;
@@ -219,7 +219,7 @@ public class TsuDbImporterComponent {
 					throw new ImportException(String.format("Data injection error, class:%s", clazz.toString()), e);
 				}
 			}
-			if (counter % 500 == 0) log.info("counter:{} class:{}", counter, clazz.toString());
+			if (counter % 500 == 0) log.debug("counter:{} class:{}", counter, clazz.toString());
 			// Step 2: find next objects (invoke all getters to external models from 'externalmodels' module)
 			for (PropertyDescriptor propertyDescriptor : BeanUtils.getPropertyDescriptors(o.getClass())) {
 				Class<?> returnClazz = propertyDescriptor.getPropertyType();
@@ -423,7 +423,7 @@ public class TsuDbImporterComponent {
 					.map(LessonCell::getExternalId)
 					.sorted()
 					.collect(Collectors.joining(","));
-				int intersectionId = new Random().nextInt();
+				int intersectionId = Math.abs(new Random().nextInt());
 				String userCreatedId = userCreated.getExternalId();
 				log.info("I{}. Intersection of user-created {} with LessonCells: {}",
 					intersectionId,
@@ -470,7 +470,11 @@ public class TsuDbImporterComponent {
 			lessonCellService.saveAll(localUpdatedLessonCell);
 			lessonCellService.saveAll(localNewLessonCells);
 			lessonCellService.deleteAll(remainingDbCells);
-			log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted", localNewLessonCells.size(), localUpdatedLessonCell.size(), remainingDbCells.size());
+			log.info("Transferring TsuDb data to local db completed, {} added, {} updated, {} deleted, {} total",
+				localNewLessonCells.size(),
+				localUpdatedLessonCell.size(),
+				remainingDbCells.size(),
+				lessonCellService.size());
 		} catch (Exception e) {
 			log.error("Error while transferring", e);
 			throw new ImportException("Error while transferring", e);

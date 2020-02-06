@@ -39,4 +39,6 @@ public interface LessonCellService {
 	Iterable<LessonCell> saveAll(Collection<LessonCell> collection);
 
 	void deleteAll(Collection<LessonCell> collection);
+
+	long size();
 }

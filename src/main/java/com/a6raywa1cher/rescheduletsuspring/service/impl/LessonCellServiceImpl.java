@@ -163,4 +163,9 @@ public class LessonCellServiceImpl implements LessonCellService {
 	public void deleteAll(Collection<LessonCell> collection) {
 		repository.deleteAll(collection);
 	}
+
+	@Override
+	public long size() {
+		return repository.count();
+	}
 }
