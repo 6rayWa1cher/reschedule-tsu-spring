@@ -35,7 +35,8 @@ public class UsernamePasswordAuthenticationProvider implements AuthenticationPro
 		if (!passwordEncoder.matches((String) authentication.getCredentials(), userDetails.getPassword())) {
 			throw new BadCredentialsException("Not matching password");
 		}
-		return new UsernamePasswordAuthenticationToken(userDetails.getUsername(), userDetails.getPassword(), userDetails.getAuthorities());
+		return new UsernamePasswordAuthenticationToken(userDetails, null,
+			userDetails.getAuthorities());
 	}
 
 	@Override
