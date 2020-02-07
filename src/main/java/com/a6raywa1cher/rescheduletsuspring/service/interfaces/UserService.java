@@ -13,5 +13,7 @@ public interface UserService {
 
 	User changePassword(User user, String password);
 
+	User grantPermission(User user, String faculty, String group);
+
 	void removeUser(User user);
 }

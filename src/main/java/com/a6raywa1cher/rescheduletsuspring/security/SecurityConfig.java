@@ -1,8 +1,7 @@
 package com.a6raywa1cher.rescheduletsuspring.security;
 
-import com.a6raywa1cher.rescheduletsuspring.dao.repository.LessonCellRepository;
-import com.a6raywa1cher.rescheduletsuspring.dao.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -20,15 +19,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 @Configuration
-@EnableGlobalMethodSecurity(securedEnabled = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true, jsr250Enabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-	private UserRepository userRepository;
-	private LessonCellRepository lessonCellRepository;
+	private UserDetailsService userDetailsService;
 
 	@Autowired
-	public SecurityConfig(UserRepository userRepository, LessonCellRepository lessonCellRepository) {
-		this.userRepository = userRepository;
-		this.lessonCellRepository = lessonCellRepository;
+	public SecurityConfig(@Qualifier("UserDetailsServiceImpl") UserDetailsService userDetailsService) {
+		this.userDetailsService = userDetailsService;
 	}
 
 	@Bean
@@ -50,9 +47,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 			.authorizeRequests()
 			.antMatchers("/").permitAll()
 			.antMatchers("/user/**").hasRole("USER")
-			.antMatchers("/user/reg", "/user/delete_user").hasRole("ADMIN")
+			.antMatchers("/user/reg", "/user/delete_user", "/user/grant").hasRole("ADMIN")
 			.antMatchers("/cells/**").hasRole("USER")
-			.antMatchers("/cells/force", "/cells/delete_sudo").hasRole("ADMIN")
+			.antMatchers("/cells/force").hasRole("ADMIN")
 			.antMatchers("/v2/api-docs", "/webjars/**", "/swagger-resources", "/swagger-resources/**",
 				"/swagger-ui.html").permitAll()
 			.antMatchers("/csrf").permitAll()
@@ -65,13 +62,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	}
 
 	@Bean
-	public UsernamePasswordAuthenticationProvider authenticationManager(PasswordEncoder passwordEncoder) {
-		return new UsernamePasswordAuthenticationProvider(userDetailsService(), passwordEncoder);
+	public UsernamePasswordAuthenticationProvider authenticationProvider() {
+		return new UsernamePasswordAuthenticationProvider(userDetailsService, passwordEncoder());
 	}
 
 	@Override
 	public UserDetailsService userDetailsService() {
-		return new UserDetailsServiceImpl(userRepository, lessonCellRepository);
+		return userDetailsService;
 	}
 
 	@Bean

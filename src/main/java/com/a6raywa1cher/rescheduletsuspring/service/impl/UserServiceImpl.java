@@ -47,6 +47,12 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
+	public User grantPermission(User user, String faculty, String group) {
+		user.getPermissions().add(faculty + '#' + group);
+		return userRepository.save(user);
+	}
+
+	@Override
 	public void removeUser(User user) {
 		userRepository.delete(user);
 	}

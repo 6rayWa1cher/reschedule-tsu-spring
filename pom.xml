@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.a6raywa1cher</groupId>
     <artifactId>reschedule-tsu-spring</artifactId>
-    <version>0.1.0-alpha-6</version>
+    <version>0.1.0-alpha-7</version>
     <packaging>war</packaging>
     <name>reschedule-tsu-spring</name>
     <description>A schedule retranslator with better API</description>

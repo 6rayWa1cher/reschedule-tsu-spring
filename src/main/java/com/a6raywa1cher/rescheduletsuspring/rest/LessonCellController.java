@@ -8,7 +8,6 @@ import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinat
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.LessonCellMirror;
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.View;
 import com.a6raywa1cher.rescheduletsuspring.rest.request.CreateLessonCellRequest;
-import com.a6raywa1cher.rescheduletsuspring.rest.request.DeleteLessonCellRequest;
 import com.a6raywa1cher.rescheduletsuspring.security.DefaultUserDetails;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.UserService;
@@ -22,8 +21,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -66,7 +65,7 @@ public class LessonCellController {
 		}
 	}
 
-	@PostMapping(path = "/force")
+	@PostMapping(path = "/force_update")
 	@Transactional(rollbackOn = ImportException.class)
 	@ApiOperation(value = "Force db import", notes = "Forces import from external db.")
 	public ResponseEntity<?> forceUpdate(
@@ -84,6 +83,13 @@ public class LessonCellController {
 
 	@PostMapping("/add")
 	@Transactional(rollbackOn = Exception.class)
+	@PreAuthorize("@mvcAccessChecker.checkFacultyAndGroup(authentication,#dto.getFaculty(),#dto.getGroup())")
+	@ApiOperation(
+		value = "Add a LessonCell",
+		notes = "Create a new user-made LessonCell.\n\n" +
+			"Users can create LessonCells only according to their permissions (<faculty>#<group> must be in permissions list.\n" +
+			"Admins can create LessonsCells without faculty-group limitation."
+	)
 	public ResponseEntity<?> addCell(@RequestBody @Valid CreateLessonCellRequest dto) {
 		User user = getUser();
 		List<LessonCell> list = lessonCellService.getByLessonCellCoordinates(new LessonCellCoordinates(
@@ -108,7 +114,8 @@ public class LessonCellController {
 		return ResponseEntity.ok(LessonCellMirror.convert(addedCell));
 	}
 
-	@GetMapping("/u/{username:[a-zA-Z0-9]{3,35}}/cells")
+	@GetMapping("/u/{username}/cells")
+	@ApiOperation(value = "Get LessonCells by creator")
 	public ResponseEntity<Page<LessonCellMirror>> getByUser(@PathVariable @Valid String username, Pageable pageable) {
 		Optional<User> optionalUser = userService.getByUsername(username);
 		if (optionalUser.isEmpty()) {
@@ -125,40 +132,39 @@ public class LessonCellController {
 		return ResponseEntity.ok(output);
 	}
 
+	@GetMapping("/c/{id}")
+	@ApiOperation(
+		value = "Get the LessonCell by id",
+		notes = "Retrive the LessonCell (no matter, user-made or external) by id."
+	)
+	public ResponseEntity<LessonCellMirror> getCell(@PathVariable String id) {
+		Optional<LessonCell> optional = lessonCellService.getById(id);
+		if (optional.isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
+		return ResponseEntity.ok(LessonCellMirror.convert(optional.get()));
+	}
 
-	@DeleteMapping("/delete")
-	public ResponseEntity<?> deleteOwnCell(@RequestBody @Valid DeleteLessonCellRequest dto) {
+	@DeleteMapping("/c/{id}")
+	@PreAuthorize("@mvcAccessChecker.checkUserLessonCell(authentication,#id)")
+	@ApiOperation(
+		value = "Delete LessonCell",
+		notes = "Delete the LessonCell (user-made only) by id.\n\n" +
+			"Users can delete only their own LessonCells.\n" +
+			"Admins can delete any user-made LessonCell."
+	)
+	public ResponseEntity<?> deleteCell(@PathVariable @Valid String id) {
 		User user = getUser();
-		Optional<LessonCell> optional = lessonCellService.getById(dto.getId());
+		Optional<LessonCell> optional = lessonCellService.getById(id);
 		if (optional.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
 		LessonCell cell = optional.get();
 		if (cell.getCreator() == null) {
 			return ResponseEntity.badRequest().body("Can't delete a non-user cell");
-		}
-		if (!user.getId().equals(cell.getCreator().getId())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN)
-				.body("Can't delete other user's LessionCell with this command");
 		}
 		lessonCellService.deleteAll(Collections.singleton(cell));
 		log.info("User {} deleted a LessonCell {}", user.getUsername(), cell.toString());
-		return ResponseEntity.ok().build();
-	}
-
-	@DeleteMapping("/delete_sudo")
-	public ResponseEntity<?> deleteCell(@RequestBody @Valid DeleteLessonCellRequest dto) {
-		User user = getUser();
-		Optional<LessonCell> optional = lessonCellService.getById(dto.getId());
-		if (optional.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-		LessonCell cell = optional.get();
-		if (cell.getCreator() == null) {
-			return ResponseEntity.badRequest().body("Can't delete a non-user cell");
-		}
-		lessonCellService.deleteAll(Collections.singleton(cell));
-		log.info("User {} deleted with force a LessonCell {}", user.getUsername(), cell.toString());
 		return ResponseEntity.ok().build();
 	}
 }
