@@ -26,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
@@ -87,7 +88,8 @@ public class LessonCellController {
 	@ApiOperation(
 		value = "Add a LessonCell",
 		notes = "Create a new user-made LessonCell.\n\n" +
-			"Users can create LessonCells only according to their permissions (<faculty>#<group> must be in permissions list.\n" +
+			"Users can create LessonCells only according to their permissions " +
+			"(&lt;faculty&gt;#&lt;group&gt; must be in permissions list).\n" +
 			"Admins can create LessonsCells without faculty-group limitation."
 	)
 	public ResponseEntity<?> addCell(@RequestBody @Valid CreateLessonCellRequest dto) {
@@ -116,12 +118,22 @@ public class LessonCellController {
 
 	@GetMapping("/u/{username}/cells")
 	@ApiOperation(value = "Get LessonCells by creator")
-	public ResponseEntity<Page<LessonCellMirror>> getByUser(@PathVariable @Valid String username, Pageable pageable) {
+	public ResponseEntity<Page<LessonCellMirror>> getByUser(@PathVariable @Valid String username,
+	                                                        @RequestParam(required = false) String faculty,
+	                                                        @RequestParam(required = false) String group,
+	                                                        Pageable pageable) {
 		Optional<User> optionalUser = userService.getByUsername(username);
 		if (optionalUser.isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
-		Page<LessonCell> page = lessonCellService.getByUser(optionalUser.get(), pageable);
+		Page<LessonCell> page;
+		if (StringUtils.isEmpty(faculty) && StringUtils.isEmpty(group)) {
+			page = lessonCellService.getByUser(optionalUser.get(), pageable);
+		} else if (StringUtils.isEmpty(group)) {
+			page = lessonCellService.getByUserFaculty(optionalUser.get(), faculty, pageable);
+		} else {
+			page = lessonCellService.getByUserFacultyGroup(optionalUser.get(), faculty, group, pageable);
+		}
 		Page<LessonCellMirror> output = new PageImpl<>(
 			page.getContent().stream()
 				.map(LessonCellMirror::convert)

@@ -80,6 +80,16 @@ public class LessonCellServiceImpl implements LessonCellService {
 	}
 
 	@Override
+	public Page<LessonCell> getByUserFaculty(User user, String faculty, Pageable pageable) {
+		return repository.getAllByCreatorAndFaculty(user, faculty, pageable);
+	}
+
+	@Override
+	public Page<LessonCell> getByUserFacultyGroup(User user, String faculty, String group, Pageable pageable) {
+		return repository.getAllByCreatorAndFacultyAndGroup(user, faculty, group, pageable);
+	}
+
+	@Override
 	public List<DaySchedule> getReadySchedules(String faculty, String group, Date from, Integer days) {
 		List<LessonCell> allCells = this.getAllByGroup(group, faculty);
 		WeekSign weekSign = weekSignComponent.getWeekSign(from, faculty);

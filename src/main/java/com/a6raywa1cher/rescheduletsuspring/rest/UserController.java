@@ -89,7 +89,7 @@ public class UserController {
 	@PostMapping("/grant")
 	@ApiOperation(
 		value = "Issue a new faculty-group permission",
-		notes = "Issues a new record in other user's 'permissions' list. Format: <faculty>#<group>.\n" +
+		notes = "Issues a new record in other user's 'permissions' list. Format: &lt;faculty&gt;#&lt;group&gt;.\n" +
 			"Only admins can issue permissions."
 	)
 	public ResponseEntity<UserMirror> grantPermission(@RequestBody @Valid GrantPermissionRequest dto) {

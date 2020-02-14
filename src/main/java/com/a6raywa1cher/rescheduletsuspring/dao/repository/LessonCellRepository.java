@@ -52,4 +52,8 @@ public interface LessonCellRepository extends PagingAndSortingRepository<LessonC
 	Stream<LessonCell> getAllByLessonCellCoordinates(@Param("coordinates") LessonCellCoordinates coordinates);
 
 	Page<LessonCell> getAllByCreator(User user, Pageable pageable);
+
+	Page<LessonCell> getAllByCreatorAndFaculty(User user, String faculty, Pageable pageable);
+
+	Page<LessonCell> getAllByCreatorAndFacultyAndGroup(User user, String faculty, String group, Pageable pageable);
 }

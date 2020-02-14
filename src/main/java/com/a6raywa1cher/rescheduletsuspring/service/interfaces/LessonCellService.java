@@ -18,6 +18,10 @@ public interface LessonCellService {
 
 	Page<LessonCell> getByUser(User user, Pageable pageable);
 
+	Page<LessonCell> getByUserFaculty(User user, String faculty, Pageable pageable);
+
+	Page<LessonCell> getByUserFacultyGroup(User user, String faculty, String group, Pageable pageable);
+
 	List<DaySchedule> getReadySchedules(String faculty, String group, Date from, Integer days);
 
 	List<LessonCell> getTeacherRaw(String teacherName);
