@@ -26,7 +26,11 @@ public class UserMirror {
 		mirror.setId(user.getId());
 		mirror.setUsername(user.getUsername());
 		mirror.setAdmin(user.isAdmin());
-		mirror.setPermissions(new ArrayList<>(user.getPermissions()));
+		if (user.getPermissions() != null) {
+			mirror.setPermissions(new ArrayList<>(user.getPermissions()));
+		} else {
+			mirror.setPermissions(new ArrayList<>());
+		}
 		return mirror;
 	}
 }
