@@ -22,23 +22,23 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 
 	@NotBlank
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.()]{3,150}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.()]{3,150}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String fullSubjectName;
 
 	@NotBlank
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.()]{3,150}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.()]{3,150}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String shortSubjectName;
 
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.]{0,100}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.]{0,100}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String teacherName;
 
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _'.]{0,100}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.]{0,100}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String teacherTitle;
 
@@ -58,7 +58,7 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 	private LocalTime end;
 
-	@Pattern(regexp = "[0-9А-Я]\\|[0-9а-яА-Я ./\\-]{1,20}")
+	@Pattern(regexp = "[0-9А-Я]\\|[0-9а-яА-Я ,./\\-]{1,20}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String auditoryAddress;
 
