@@ -58,6 +58,9 @@ public class FacultyController {
 		@ApiParam(value = "Include LessonCells (use with caution!)")
 		@RequestParam(name = "full_table", required = false, defaultValue = "false")
 			Boolean fullTable) {
+		if (!service.isFacultyExists(facultyId)) {
+			return ResponseEntity.notFound().build();
+		}
 		List<GroupInfo> results = service.findGroupsAndSubgroups(facultyId);
 		GetGroupsResponse response = new GetGroupsResponse();
 		response.setGroups(new ArrayList<>());
@@ -77,6 +80,9 @@ public class FacultyController {
 	@ApiOperation(value = "Get raw schedule of group", notes = "Provides list of groups and additional info about them.")
 	@JsonView(View.Public.class)
 	public ResponseEntity<List<LessonCellMirror>> getSchedule(@PathVariable String groupId, @PathVariable String facultyId) {
+		if (!service.isGroupExists(facultyId, groupId)) {
+			return ResponseEntity.notFound().build();
+		}
 		List<LessonCell> cells = service.getAllByGroup(groupId, facultyId);
 		return ResponseEntity.ok(cells.stream().map(LessonCellMirror::convert).collect(Collectors.toList()));
 	}
@@ -91,6 +97,9 @@ public class FacultyController {
 		@RequestParam(name = "day", required = false)
 		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
 		@Valid Date date) {
+		if (!service.isGroupExists(facultyId, groupId)) {
+			return ResponseEntity.notFound().build();
+		}
 		date = date == null ? new Date() : date;
 		List<DaySchedule> daySchedules = service.getReadySchedules(facultyId, groupId, date, 7);
 		GetScheduleForWeekResponse response = new GetScheduleForWeekResponse();
@@ -113,6 +122,9 @@ public class FacultyController {
 		@Valid
 			Date date,
 		@PathVariable String facultyId) {
+		if (!service.isFacultyExists(facultyId)) {
+			return ResponseEntity.notFound().build();
+		}
 		GetWeekSignResponse response = new GetWeekSignResponse();
 		response.setWeekSign(weekSignComponent.getWeekSign(date == null ? new Date() : date, facultyId));
 		return ResponseEntity.ok(response);

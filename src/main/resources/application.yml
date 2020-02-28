@@ -6,7 +6,6 @@ app:
     current-season: 2019 - 2020
     semester: Осень
     cron: "-"
-  admin-token: eqnfoiwehojJSQ
   week-sign:
     primary-info:
       facultyName: ПМиК

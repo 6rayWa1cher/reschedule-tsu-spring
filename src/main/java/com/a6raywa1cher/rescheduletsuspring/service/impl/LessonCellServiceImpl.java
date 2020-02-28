@@ -75,6 +75,16 @@ public class LessonCellServiceImpl implements LessonCellService {
 	}
 
 	@Override
+	public boolean isFacultyExists(String faculty) {
+		return repository.countByFaculty(faculty) > 0;
+	}
+
+	@Override
+	public boolean isGroupExists(String faculty, String group) {
+		return repository.countByFacultyAndGroup(faculty, group) > 0;
+	}
+
+	@Override
 	public Page<LessonCell> getByUser(User user, Pageable pageable) {
 		return repository.getAllByCreator(user, pageable);
 	}

@@ -16,6 +16,10 @@ public interface LessonCellService {
 
 	Optional<LessonCell> getById(String id);
 
+	boolean isFacultyExists(String faculty);
+
+	boolean isGroupExists(String faculty, String group);
+
 	Page<LessonCell> getByUser(User user, Pageable pageable);
 
 	Page<LessonCell> getByUserFaculty(User user, String faculty, Pageable pageable);

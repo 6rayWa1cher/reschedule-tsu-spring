@@ -56,4 +56,8 @@ public interface LessonCellRepository extends PagingAndSortingRepository<LessonC
 	Page<LessonCell> getAllByCreatorAndFaculty(User user, String faculty, Pageable pageable);
 
 	Page<LessonCell> getAllByCreatorAndFacultyAndGroup(User user, String faculty, String group, Pageable pageable);
+
+	long countByFacultyAndGroup(String faculty, String group);
+
+	long countByFaculty(String faculty);
 }
