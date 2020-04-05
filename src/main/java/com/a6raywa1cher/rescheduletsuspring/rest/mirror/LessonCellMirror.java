@@ -11,7 +11,7 @@ import java.time.LocalTime;
 
 @Data
 public class LessonCellMirror {
-	@JsonView(View.Internal.class)
+	@JsonView(View.Public.class)
 	private String externalId;
 
 	@JsonView(View.Public.class)
