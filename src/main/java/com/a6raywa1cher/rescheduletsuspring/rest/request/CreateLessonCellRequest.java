@@ -13,6 +13,7 @@ import lombok.Data;
 import javax.validation.constraints.*;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -92,6 +93,10 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	@Size(max = 50)
 	@Pattern(regexp = "[а-яА-Яa-zA-Z, \\-0-9()]{3,50}")
 	private String faculty;
+
+	@NotNull
+	@Size(max = 5)
+	private List<String> attributes;
 
 	@NotNull
 	private Boolean ignoreExternalDb;

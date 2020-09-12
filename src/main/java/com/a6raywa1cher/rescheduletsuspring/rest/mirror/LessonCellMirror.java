@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 public class LessonCellMirror {
@@ -64,13 +65,15 @@ public class LessonCellMirror {
 	@JsonView(View.Public.class)
 	private Boolean userMade;
 
+	@JsonView(View.Public.class)
+	private List<String> attributes;
+
 	@JsonView(View.Internal.class)
 	private Boolean ignoreExternalDb;
 
 	@JsonView(View.Internal.class)
 	private Boolean ignoreExternalDbByHashCode;
 
-	@SuppressWarnings("DuplicatedCode")
 	public static LessonCellMirror convert(LessonCell cell) {
 		LessonCellMirror mirror = new LessonCellMirror();
 		mirror.setExternalId(cell.getExternalId());
@@ -90,6 +93,7 @@ public class LessonCellMirror {
 		mirror.setCrossPair(cell.getCrossPair());
 		mirror.setFaculty(cell.getFaculty());
 		mirror.setUserMade(cell.getCreator() != null);
+		mirror.setAttributes(cell.getAttributes());
 		mirror.setIgnoreExternalDb(cell.getIgnoreExternalDb());
 		mirror.setIgnoreExternalDbByHashCode(cell.getIgnoreExternalDbHashCode() != null);
 		return mirror;

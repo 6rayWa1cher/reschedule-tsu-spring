@@ -43,9 +43,9 @@ public class TsuDbImporterComponent {
 
 	@Autowired
 	public TsuDbImporterComponent(ImportStrategy strategy,
-	                              @Value("${app.tsudb.current-season}") String currentSeason,
-	                              @Value("${app.tsudb.semester}") String currentSemester,
-	                              LessonCellService lessonCellService) {
+								  @Value("${app.tsudb.current-season}") String currentSeason,
+								  @Value("${app.tsudb.semester}") String currentSemester,
+								  LessonCellService lessonCellService) {
 		this.strategy = strategy;
 		this.lessonCellService = lessonCellService;
 		this.isUpdatingLocalDatabase = new AtomicBoolean(false);
@@ -288,6 +288,16 @@ public class TsuDbImporterComponent {
 							if (lesson.getSubjectObj() != null) {
 								lessonCell.setFullSubjectName(lesson.getSubjectObj().getName());
 								lessonCell.setShortSubjectName(lesson.getSubjectObj().getAbbr());
+								String rawComment = lesson.getComment();
+								if (rawComment != null && rawComment.matches("^\\(.+\\)$")) {
+									lessonCell.setAttributes(
+										Arrays.stream(rawComment
+											.substring(1, rawComment.length() - 1)
+											.split(","))
+											.map(String::strip)
+											.collect(Collectors.toList())
+									);
+								}
 							} else {
 								lessonCell.setFullSubjectName(lesson.getComment());
 								lessonCell.setShortSubjectName(lesson.getComment());
@@ -328,6 +338,7 @@ public class TsuDbImporterComponent {
 						} catch (Exception e) {
 							log.error("Error while transfering to LessonCell, faculty {}",
 								season.get_id().getFaculty().getAbbr());
+							log.trace("Error trace: ", e);
 						}
 					}
 				}

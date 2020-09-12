@@ -32,3 +32,5 @@ build/
 
 application-prod.yml
 sentry.properties
+
+cache

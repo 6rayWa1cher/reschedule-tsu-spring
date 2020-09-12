@@ -4,6 +4,7 @@ import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
 
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.List;
 
 public interface LessonCellInfoHolder {
 	String getExternalId();
@@ -78,6 +79,10 @@ public interface LessonCellInfoHolder {
 
 	void setFaculty(String faculty);
 
+	List<String> getAttributes();
+
+	void setAttributes(List<String> attributes);
+
 	User getCreator();
 
 	void setCreator(User creator);
@@ -109,6 +114,7 @@ public interface LessonCellInfoHolder {
 		this.setCountOfSubgroups(other.getCountOfSubgroups());
 		this.setCrossPair(other.getCrossPair());
 		this.setFaculty(other.getFaculty());
+		this.setAttributes(other.getAttributes());
 		this.setCreator(other.getCreator());
 		this.setIgnoreExternalDb(other.getIgnoreExternalDb());
 		this.setIgnoreExternalDbHashCode(other.getIgnoreExternalDbHashCode());

@@ -8,6 +8,8 @@ import lombok.ToString;
 import javax.persistence.*;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -73,6 +75,9 @@ public class LessonCell implements LessonCellInfoHolder {
 
 	@Column(nullable = false)
 	private String faculty;
+
+	@ElementCollection(fetch = FetchType.EAGER)
+	private List<String> attributes = new ArrayList<>();
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	private User creator;
