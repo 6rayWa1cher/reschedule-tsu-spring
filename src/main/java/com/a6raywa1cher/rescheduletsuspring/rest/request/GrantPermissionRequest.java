@@ -13,6 +13,6 @@ public class GrantPermissionRequest {
 	@Pattern(regexp = "[а-яА-Яa-zA-Z, \\-0-9()]{3,50}")
 	private String faculty;
 	@NotBlank
-	@Pattern(regexp = "[а-яА-Я, \\-0-9'.(М)]{1,150}")
+	@Pattern(regexp = "[а-яА-Я, \\-0-9':.(М)]{1,150}")
 	private String group;
 }
