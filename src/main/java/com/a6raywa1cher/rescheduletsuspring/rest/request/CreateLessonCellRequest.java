@@ -73,7 +73,7 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 
 	@NotBlank
 	@Size(max = 150)
-	@Pattern(regexp = "[а-яА-Я, \\-0-9'.(М)]{1,150}")
+	@Pattern(regexp = "[а-яА-Я, \\-0-9':.(М)]{1,150}")
 	private String group;
 
 	@NotNull
