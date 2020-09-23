@@ -94,7 +94,6 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	@Pattern(regexp = "[а-яА-Яa-zA-Z, \\-0-9()]{3,50}")
 	private String faculty;
 
-	@NotNull
 	@Size(max = 5)
 	private List<String> attributes;
 
