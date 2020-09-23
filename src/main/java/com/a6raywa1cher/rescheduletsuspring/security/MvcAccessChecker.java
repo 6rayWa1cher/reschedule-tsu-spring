@@ -12,7 +12,7 @@ public class MvcAccessChecker {
 	public boolean checkFacultyAndGroup(Authentication authentication, String faculty, String group) {
 		if (faculty == null || group == null) return false;
 		if (faculty.equals("any")) return false;
-		if (!faculty.matches("[а-яА-Яa-zA-Z, \\-0-9()]{3,50}") || !group.matches("[а-яА-Я, \\-0-9'.(М)]{1,150}")) {
+		if (!faculty.matches("[а-яА-Яa-zA-Z, \\-0-9()]{3,50}") || !group.matches("[а-яА-Я, \\-0-9':.(М)]{1,150}")) {
 			return false;
 		}
 		Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
