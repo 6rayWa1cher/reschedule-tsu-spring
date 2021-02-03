@@ -23,23 +23,23 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 
 	@NotBlank
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.()]{3,150}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _\\-',.()]{3,150}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String fullSubjectName;
 
 	@NotBlank
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.()]{3,150}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _\\-',.()]{3,150}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String shortSubjectName;
 
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.]{0,100}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _\\-',.]{0,100}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String teacherName;
 
 	@Size(max = 255)
-	@Pattern(regexp = "[a-zA-Zа-яА-Я _',.]{0,100}")
+	@Pattern(regexp = "[a-zA-Zа-яА-Я _\\-',.]{0,100}")
 	@JsonDeserialize(using = WhiteSpaceRemovalDeserializer.class)
 	private String teacherTitle;
 
