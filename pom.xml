@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.a6raywa1cher</groupId>
     <artifactId>reschedule-tsu-spring</artifactId>
-    <version>0.1.5</version>
+    <version>0.1.6</version>
     <packaging>war</packaging>
     <name>reschedule-tsu-spring</name>
     <description>A schedule retranslator with better API</description>
@@ -20,10 +20,6 @@
     </properties>
 
     <dependencies>
-        <!--        <dependency>-->
-        <!--            <groupId>org.springframework.boot</groupId>-->
-        <!--            <artifactId>spring-boot-starter-actuator</artifactId>-->
-        <!--        </dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>

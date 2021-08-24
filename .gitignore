@@ -30,7 +30,7 @@ build/
 ### VS Code ###
 .vscode/
 
-application-prod.yml
+application-*.yml
 sentry.properties
 
 cache

@@ -168,7 +168,7 @@ public class TsuDbImporterComponent {
 	private List<Season> filterSeasons(List<Season> seasons) {
 		return seasons.stream()
 			.filter(season -> season.get_id().getYear().equals(currentSeason))
-			.filter(season -> Objects.equals(season.get_id().getSemester(), currentSemester))
+			.filter(season -> Objects.equals(season.get_id().getSemester().replace('O', 'О'), currentSemester)) // eng O -> rus O, costul'
 			.collect(Collectors.toList());
 	}
 
