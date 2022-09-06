@@ -1,6 +1,7 @@
 package com.a6raywa1cher.rescheduletsuspring.components.tsudbimporter;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -13,8 +14,9 @@ import java.io.IOException;
 
 @Component
 @Order(1)
+@ConditionalOnProperty(prefix = "app.tsudb", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class WhileImportOncePerRequestFilter extends OncePerRequestFilter {
-	private TsuDbImporterComponent importer;
+	private final TsuDbImporterComponent importer;
 
 	@Autowired
 	public WhileImportOncePerRequestFilter(TsuDbImporterComponent importer) {
