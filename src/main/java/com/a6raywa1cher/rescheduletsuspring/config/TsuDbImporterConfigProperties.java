@@ -13,6 +13,11 @@ import javax.validation.constraints.Pattern;
 @Validated
 @Data
 public class TsuDbImporterConfigProperties {
+	/**
+	 * Is Tsu database importer must be enabled
+	 */
+	private boolean enabled = true;
+
 	@NotBlank
 	private String path;
 	/**

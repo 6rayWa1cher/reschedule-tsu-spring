@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -32,20 +33,21 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Component
+@ConditionalOnProperty(prefix = "app.tsudb", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class TsuDbImporterComponent {
 	private static final Logger log = LoggerFactory.getLogger(TsuDbImporterComponent.class);
 	private final AtomicBoolean isUpdatingLocalDatabase;
-	private ImportStrategy strategy;
-	private String currentSeason;
-	private String currentSemester;
-	private LessonCellService lessonCellService;
-	private ObjectMapper objectMapper;
+	private final ImportStrategy strategy;
+	private final String currentSeason;
+	private final String currentSemester;
+	private final LessonCellService lessonCellService;
+	private final ObjectMapper objectMapper;
 
 	@Autowired
 	public TsuDbImporterComponent(ImportStrategy strategy,
-								  @Value("${app.tsudb.current-season}") String currentSeason,
-								  @Value("${app.tsudb.semester}") String currentSemester,
-								  LessonCellService lessonCellService) {
+	                              @Value("${app.tsudb.current-season}") String currentSeason,
+	                              @Value("${app.tsudb.semester}") String currentSemester,
+	                              LessonCellService lessonCellService) {
 		this.strategy = strategy;
 		this.lessonCellService = lessonCellService;
 		this.isUpdatingLocalDatabase = new AtomicBoolean(false);
@@ -413,7 +415,7 @@ public class TsuDbImporterComponent {
 			// if ignoreExternalDb and ignoreExternalDbHashCode != null, check cell's hash code. if
 			//    hashCode != ignoreExternalDbHashCode, drop user-created. Otherwise block external db's cell.
 			// if not ignoreExternalDb and external db contains identical cell, drop user-created.
-			//    Otherwise remain user-created.
+			//    Otherwise, remain user-created.
 			Set<LessonCell> userMadeCells = remainingDbCells.stream()
 				.filter(lessonCell -> lessonCell.getCreator() != null)
 				.collect(Collectors.toSet());
