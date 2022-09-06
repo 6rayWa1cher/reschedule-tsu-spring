@@ -46,12 +46,13 @@ import java.util.stream.Collectors;
 @JsonView({View.Public.class, View.Internal.class})
 public class LessonCellController {
 	private static final Logger log = LoggerFactory.getLogger(LessonCellController.class);
-	private TsuDbImporterComponent importer;
-	private UserService userService;
-	private LessonCellService lessonCellService;
+	private final TsuDbImporterComponent importer;
+	private final UserService userService;
+	private final LessonCellService lessonCellService;
 
 	@Autowired
-	public LessonCellController(TsuDbImporterComponent importer, UserService userService, LessonCellService lessonCellService) {
+	public LessonCellController(
+		@Autowired(required = false) TsuDbImporterComponent importer, UserService userService, LessonCellService lessonCellService) {
 		this.importer = importer;
 		this.userService = userService;
 		this.lessonCellService = lessonCellService;
@@ -71,14 +72,18 @@ public class LessonCellController {
 	@ApiOperation(value = "Force db import", notes = "Forces import from external db.")
 	public ResponseEntity<?> forceUpdate(
 		@RequestParam(required = false, name = "override_cache", defaultValue = "false")
-			Boolean overrideCache) throws ImportException {
-		try {
-			importer.importExternalModels(overrideCache == null ? false : overrideCache);
-		} catch (Exception e) {
-			log.error(String.format("Error during forced update (flag %b)", overrideCache), e);
-			throw e;
+		Boolean overrideCache) throws ImportException {
+		if (importer != null) {
+			try {
+				importer.importExternalModels(overrideCache == null ? false : overrideCache);
+			} catch (Exception e) {
+				log.error(String.format("Error during forced update (flag %b)", overrideCache), e);
+				throw e;
+			}
+			log.info("Imported external DB by request");
+		} else {
+			log.info("Skipped force update request: importer is disabled");
 		}
-		log.info("Imported external DB by request");
 		return ResponseEntity.ok().build();
 	}
 
