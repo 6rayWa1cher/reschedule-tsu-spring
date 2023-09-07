@@ -37,4 +37,11 @@ public class LessonCellCoordinates {
 		coordinates.setTeacherName(cell.getTeacherName());
 		return coordinates;
 	}
+
+	public String toIdentifier() {
+		return String.format(
+			"%s_%s_%d_%s_%s_%d_%s",
+			facultyId, group, subgroup, weekSign.name(), dayOfWeek.name(), columnPosition, teacherName
+		);
+	}
 }

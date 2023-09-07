@@ -1,9 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.models;
 
-import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -18,6 +15,9 @@ import java.util.List;
 })
 @EqualsAndHashCode(exclude = "creator")
 @ToString(exclude = "creator")
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LessonCell implements LessonCellInfoHolder {
 	@Id
 	private String externalId;
@@ -56,7 +56,7 @@ public class LessonCell implements LessonCellInfoHolder {
 
 	@Column
 	@Enumerated(EnumType.ORDINAL)
-	private Direction.Level level;
+	private Level level;
 
 	@Column
 	private Integer course;

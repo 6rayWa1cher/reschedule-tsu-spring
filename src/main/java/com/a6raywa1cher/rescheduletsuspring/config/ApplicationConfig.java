@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
+import java.time.Clock;
+
 @Configuration
 public class ApplicationConfig {
 	@Bean
@@ -19,4 +21,8 @@ public class ApplicationConfig {
 		return new SentryServletContextInitializer();
 	}
 
+	@Bean
+	public Clock clock() {
+		return Clock.systemDefaultZone();
+	}
 }

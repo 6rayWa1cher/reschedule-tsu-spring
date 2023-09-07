@@ -1,6 +1,7 @@
 app:
   tsudb:
     enabled: true
+    remote-type: timetable
     import-source: network
     path: path-to-server
     cache-path: path-to-dir
@@ -9,8 +10,8 @@ app:
     cron: "-"
   week-sign:
     primary-info:
-      facultyName: ПМиК
-      date: 2019-09-07
+      facultyName: Факультет прикладной математики и кибернетики
+      date: 2023-09-04
       week-sign: MINUS
       week-sign-strategy: plusminus
 spring:
@@ -20,7 +21,7 @@ spring:
 # ===============================
 # DB CONNECTION
 # ===============================
-spring.datasource.url: jdbc:postgresql://localhost:5432/reshedule-tsu
+spring.datasource.url: jdbc:postgresql://localhost:5432/reschedule-tsu
 spring.datasource.username: postgres
 spring.datasource.password: Ofss57ArFFNAZfNL9cWO
 # ===============================

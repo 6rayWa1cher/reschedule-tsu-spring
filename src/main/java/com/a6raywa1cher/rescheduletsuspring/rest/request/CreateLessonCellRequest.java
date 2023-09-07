@@ -1,8 +1,8 @@
 package com.a6raywa1cher.rescheduletsuspring.rest.request;
 
 import com.a6raywa1cher.rescheduletsuspring.config.WhiteSpaceRemovalDeserializer;
-import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCellInfoHolder;
+import com.a6raywa1cher.rescheduletsuspring.models.Level;
 import com.a6raywa1cher.rescheduletsuspring.models.User;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -64,7 +64,7 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	private String auditoryAddress;
 
 	@NotNull
-	private Direction.Level level;
+	private Level level;
 
 	@NotNull
 	@Min(1)

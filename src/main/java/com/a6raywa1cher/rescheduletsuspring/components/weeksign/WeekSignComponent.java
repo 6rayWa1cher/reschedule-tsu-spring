@@ -1,6 +1,8 @@
 package com.a6raywa1cher.rescheduletsuspring.components.weeksign;
 
-import com.a6raywa1cher.rescheduletsuspring.config.WeekSignConfigProperties;
+import com.a6raywa1cher.rescheduletsuspring.components.weeksign.strategy.PlusMinusWeekSignStrategy;
+import com.a6raywa1cher.rescheduletsuspring.components.weeksign.strategy.SingleModeWeekSignStrategy;
+import com.a6raywa1cher.rescheduletsuspring.config.properties.WeekSignConfigProperties;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

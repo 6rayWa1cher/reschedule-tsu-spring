@@ -1,11 +1,11 @@
 package com.a6raywa1cher.rescheduletsuspring.dao.results;
 
-import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
+import com.a6raywa1cher.rescheduletsuspring.models.Level;
 import lombok.Data;
 
 @Data
 public class FindGroupsAndSubgroupsResult {
-	private Direction.Level level;
+	private Level level;
 
 	private String group;
 
@@ -13,7 +13,7 @@ public class FindGroupsAndSubgroupsResult {
 
 	private Integer course;
 
-	public FindGroupsAndSubgroupsResult(Direction.Level level, String group, Integer subgroups, Integer course) {
+	public FindGroupsAndSubgroupsResult(Level level, String group, Integer subgroups, Integer course) {
 		this.level = level;
 		this.group = group;
 		this.subgroups = subgroups;

@@ -1,7 +1,5 @@
 package com.a6raywa1cher.rescheduletsuspring.models;
 
-import com.a6raywa1cher.rescheduletsuspring.externalmodels.Direction;
-
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
@@ -51,9 +49,9 @@ public interface LessonCellInfoHolder {
 
 	void setAuditoryAddress(String auditoryAddress);
 
-	Direction.Level getLevel();
+	Level getLevel();
 
-	void setLevel(Direction.Level level);
+	void setLevel(Level level);
 
 	Integer getCourse();
 

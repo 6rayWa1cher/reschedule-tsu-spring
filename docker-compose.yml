@@ -1,0 +1,26 @@
+version: "3.3"
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./cache:/var/rts-cache/
+    depends_on:
+      - db
+    environment:
+      - APP_TSUDB_PATH=https://timetable.tversu.ru/api/v1/
+      - APP_TSUDB_CACHE_PATH=/var/rts-cache/
+      - APP_TSUDB_CURRENT_SEASON=2023 - 2024
+      - APP_TSUDB_SEMESTER=Осень
+      - APP_WEEK_SIGN_PRIMARY_INFO_DATE=2023-09-04
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/reschedule-tsu
+  db:
+    image: postgres:14-alpine
+    ports:
+      - "8054:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=Ofss57ArFFNAZfNL9cWO
+      - POSTGRES_DB=reschedule-tsu
