@@ -11,13 +11,11 @@ import java.time.DayOfWeek;
 
 @Component
 public class TimeDataLessonCellTimetableMapper implements LessonCellTimetableMapper {
-	private static final int LESSON_NUMBER_SHIFT = 1;
-
 	@Override
 	public void map(LessonCellTimetableMapperContext ctx, LessonCell cell) throws ImportException {
 		cell.setWeekSign(mapWeekMarkToWeekSign(ctx.getLessonDto().getWeekMark()));
 		cell.setDayOfWeek(DayOfWeek.of(ctx.getLessonDto().getWeekDay()));
-		cell.setColumnPosition(ctx.getLessonDto().getLessonNumber() + LESSON_NUMBER_SHIFT);
+		cell.setColumnPosition(ctx.getLessonDto().getLessonNumber());
 		cell.setStart(ctx.getLessonTimeDto().getStart());
 		cell.setEnd(ctx.getLessonTimeDto().getEnd());
 	}

@@ -10,10 +10,10 @@
     </parent>
     <groupId>com.a6raywa1cher</groupId>
     <artifactId>reschedule-tsu-spring</artifactId>
-    <version>0.1.9</version>
+    <version>0.1.10</version>
     <packaging>war</packaging>
     <name>reschedule-tsu-spring</name>
-    <description>A schedule retranslator with better API</description>
+    <description>A schedule relay with better API</description>
 
     <properties>
         <java.version>11</java.version>
