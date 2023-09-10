@@ -18,9 +18,13 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LessonCell implements LessonCellInfoHolder {
+public class LessonCell {
 	@Id
 	private String externalId;
+
+	@Column
+	@GeneratedValue
+	private Integer internalId;
 
 	@Column
 	@Enumerated(EnumType.ORDINAL)
@@ -77,6 +81,7 @@ public class LessonCell implements LessonCellInfoHolder {
 	private String faculty;
 
 	@ElementCollection(fetch = FetchType.EAGER)
+	@Builder.Default
 	private List<String> attributes = new ArrayList<>();
 
 	@ManyToOne(fetch = FetchType.LAZY)

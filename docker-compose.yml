@@ -16,6 +16,7 @@ services:
       - APP_TSUDB_SEMESTER=Осень
       - APP_WEEK_SIGN_PRIMARY_INFO_DATE=2023-09-04
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/reschedule-tsu
+      - TZ=Europe/Moscow
   db:
     image: postgres:14-alpine
     ports:

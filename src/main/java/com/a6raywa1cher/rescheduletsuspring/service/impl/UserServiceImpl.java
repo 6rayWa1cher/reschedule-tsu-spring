@@ -3,22 +3,17 @@ package com.a6raywa1cher.rescheduletsuspring.service.impl;
 import com.a6raywa1cher.rescheduletsuspring.dao.repository.UserRepository;
 import com.a6raywa1cher.rescheduletsuspring.models.User;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class UserServiceImpl implements UserService {
-	private UserRepository userRepository;
-	private PasswordEncoder passwordEncoder;
-
-	@Autowired
-	public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-		this.userRepository = userRepository;
-		this.passwordEncoder = passwordEncoder;
-	}
+	private final UserRepository userRepository;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public Optional<User> getByUsername(String username) {

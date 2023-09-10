@@ -1,7 +1,6 @@
 package com.a6raywa1cher.rescheduletsuspring.rest.request;
 
 import com.a6raywa1cher.rescheduletsuspring.config.WhiteSpaceRemovalDeserializer;
-import com.a6raywa1cher.rescheduletsuspring.models.LessonCellInfoHolder;
 import com.a6raywa1cher.rescheduletsuspring.models.Level;
 import com.a6raywa1cher.rescheduletsuspring.models.User;
 import com.a6raywa1cher.rescheduletsuspring.models.WeekSign;
@@ -17,7 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
-public class CreateLessonCellRequest implements LessonCellInfoHolder {
+public class CreateLessonCellRequest {
 	@NotNull
 	private WeekSign weekSign;
 
@@ -104,37 +103,31 @@ public class CreateLessonCellRequest implements LessonCellInfoHolder {
 	private Boolean ignoreLastExternalDbRecord;
 
 	@JsonIgnore
-	@Override
 	public String getExternalId() {
 		return UUID.randomUUID().toString();
 	}
 
 	@JsonIgnore
-	@Override
 	public void setExternalId(String externalId) {
 
 	}
 
 	@JsonIgnore
-	@Override
 	public User getCreator() {
 		return null;
 	}
 
 	@JsonIgnore
-	@Override
 	public void setCreator(User creator) {
 
 	}
 
 	@JsonIgnore
-	@Override
 	public String getIgnoreExternalDbHashCode() {
 		return null;
 	}
 
 	@JsonIgnore
-	@Override
 	public void setIgnoreExternalDbHashCode(String ignoreExternalDbHashCode) {
 		ignoreLastExternalDbRecord = ignoreLastExternalDbRecord != null;
 	}

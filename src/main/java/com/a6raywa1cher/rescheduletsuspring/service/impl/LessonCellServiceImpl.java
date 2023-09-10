@@ -11,7 +11,7 @@ import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinat
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.DaySchedule;
 import com.a6raywa1cher.rescheduletsuspring.service.submodels.GroupInfo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.util.Pair;
@@ -25,15 +25,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
+@AllArgsConstructor
 public class LessonCellServiceImpl implements LessonCellService {
-	private LessonCellRepository repository;
-	private WeekSignComponent weekSignComponent;
-
-	@Autowired
-	public LessonCellServiceImpl(LessonCellRepository repository, WeekSignComponent weekSignComponent) {
-		this.repository = repository;
-		this.weekSignComponent = weekSignComponent;
-	}
+	private final LessonCellRepository repository;
+	private final WeekSignComponent weekSignComponent;
 
 	private List<DaySchedule> convertToReadySchedule(List<LessonCell> allCells, WeekSign currentWeekSign, Date from, Integer days) {
 		Map<Pair<WeekSign, DayOfWeek>, DaySchedule> map = new LinkedHashMap<>();

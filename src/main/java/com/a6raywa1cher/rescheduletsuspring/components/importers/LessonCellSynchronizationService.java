@@ -1,6 +1,7 @@
 package com.a6raywa1cher.rescheduletsuspring.components.importers;
 
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
+import com.a6raywa1cher.rescheduletsuspring.models.mapper.LessonCellMapper;
 import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinates;
 import com.a6raywa1cher.rescheduletsuspring.service.interfaces.LessonCellService;
 import lombok.AllArgsConstructor;
@@ -20,6 +21,7 @@ public class LessonCellSynchronizationService {
 	private final AtomicBoolean updatingLocalDatabase = new AtomicBoolean();
 
 	private final LessonCellService lessonCellService;
+	private final LessonCellMapper mapper;
 
 	/**
 	 * Merges local database and new LessonCells.
@@ -58,7 +60,7 @@ public class LessonCellSynchronizationService {
 				LessonCell inDb = idToCellInDb.get(preparedCell.getExternalId());
 				remainingDbCells.remove(inDb);
 				localNewLessonCells.remove(preparedCell);
-				inDb.transfer(preparedCell);
+				mapper.copyData(preparedCell, inDb);
 				localUpdatedLessonCell.add(inDb);
 			}
 			// User-created LessonCells

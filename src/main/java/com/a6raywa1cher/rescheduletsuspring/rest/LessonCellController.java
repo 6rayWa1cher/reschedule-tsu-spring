@@ -4,6 +4,7 @@ import com.a6raywa1cher.rescheduletsuspring.components.importers.ExternalModelsI
 import com.a6raywa1cher.rescheduletsuspring.components.importers.ImportException;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.models.User;
+import com.a6raywa1cher.rescheduletsuspring.models.mapper.LessonCellMapper;
 import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinates;
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.LessonCellMirror;
 import com.a6raywa1cher.rescheduletsuspring.rest.mirror.View;
@@ -49,16 +50,19 @@ public class LessonCellController {
 	private final ExternalModelsImporter importer;
 	private final UserService userService;
 	private final LessonCellService lessonCellService;
+	private final LessonCellMapper mapper;
 
 	@Autowired
 	public LessonCellController(
 		@Autowired(required = false) ExternalModelsImporter importer,
 		UserService userService,
-		LessonCellService lessonCellService
+		LessonCellService lessonCellService,
+		LessonCellMapper mapper
 	) {
 		this.importer = importer;
 		this.userService = userService;
 		this.lessonCellService = lessonCellService;
+		this.mapper = mapper;
 	}
 
 	private User getUser() {
@@ -79,7 +83,7 @@ public class LessonCellController {
 	) throws ImportException {
 		if (importer != null) {
 			try {
-				importer.importExternalModels(overrideCache == null ? false : overrideCache);
+				importer.importExternalModels(overrideCache != null && overrideCache);
 			} catch (Exception e) {
 				log.error(String.format("Error during forced update (flag %b)", overrideCache), e);
 				throw e;
@@ -117,11 +121,10 @@ public class LessonCellController {
 				);
 			}
 		}
-		LessonCell lessonCell = new LessonCell();
-		lessonCell.transfer(dto);
+		LessonCell lessonCell = mapper.map(dto);
 		lessonCell.setCreator(user);
 		LessonCell addedCell = lessonCellService.addUserCell(lessonCell, dto.getIgnoreLastExternalDbRecord());
-		log.info("User {} added a LessonCell {}", user.getUsername(), lessonCell.toString());
+		log.info("User {} added a LessonCell {}", user.getUsername(), lessonCell);
 		return ResponseEntity.ok(LessonCellMirror.convert(addedCell));
 	}
 
@@ -159,11 +162,9 @@ public class LessonCellController {
 		notes = "Retrive the LessonCell (no matter, user-made or external) by id."
 	)
 	public ResponseEntity<LessonCellMirror> getCell(@PathVariable String id) {
-		Optional<LessonCell> optional = lessonCellService.getById(id);
-		if (optional.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-		return ResponseEntity.ok(LessonCellMirror.convert(optional.get()));
+		return lessonCellService.getById(id)
+			.map(lessonCell -> ResponseEntity.ok(LessonCellMirror.convert(lessonCell)))
+			.orElseGet(() -> ResponseEntity.notFound().build());
 	}
 
 	@DeleteMapping("/c/{id}")
@@ -185,7 +186,7 @@ public class LessonCellController {
 			return ResponseEntity.badRequest().body("Can't delete a non-user cell");
 		}
 		lessonCellService.deleteAll(Collections.singleton(cell));
-		log.info("User {} deleted a LessonCell {}", user.getUsername(), cell.toString());
+		log.info("User {} deleted a LessonCell {}", user.getUsername(), cell);
 		return ResponseEntity.ok().build();
 	}
 }
