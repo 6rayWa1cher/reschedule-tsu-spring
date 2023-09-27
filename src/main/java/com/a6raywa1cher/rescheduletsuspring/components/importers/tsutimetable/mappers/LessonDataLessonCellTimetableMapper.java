@@ -17,18 +17,14 @@ public class LessonDataLessonCellTimetableMapper implements LessonCellTimetableM
 		cell.setFullSubjectName(lessonDto.getCourseName().strip());
 		cell.setShortSubjectName(lessonDto.getCourseName().strip());
 
-		try {
-			if (professor.matches(" *[^(]+\\(.+\\) *")) {
-				String[] split = professor.strip().split("\\(");
-				String teacherName = split[0].strip();
-				String teacherTitle = split[1].strip();
-				cell.setTeacherName(teacherName);
-				cell.setTeacherTitle(teacherTitle.substring(0, teacherTitle.length() - 1).strip());
-			} else {
-				cell.setTeacherName(professor.strip());
-			}
-		} catch (Throwable e) {
-			System.out.println("cookie");
+		if (professor.matches(" *[^(]+\\(.+\\) *")) {
+			int firstLeftParenAt = professor.indexOf('(');
+			String teacherName = professor.substring(0, firstLeftParenAt).strip();
+			String teacherTitle = professor.substring(firstLeftParenAt + 1).strip();
+			cell.setTeacherName(teacherName);
+			cell.setTeacherTitle(teacherTitle.substring(0, teacherTitle.length() - 1).strip());
+		} else {
+			cell.setTeacherName(professor.strip());
 		}
 	}
 }
