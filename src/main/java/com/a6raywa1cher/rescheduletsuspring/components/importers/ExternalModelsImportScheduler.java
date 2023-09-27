@@ -22,7 +22,7 @@ public class ExternalModelsImportScheduler {
 	@Scheduled(cron = "${app.tsudb.cron}")
 	public void importExternalModels() {
 		try {
-			externalModelsImporter.importExternalModels(false);
+			externalModelsImporter.importExternalModels(true);
 		} catch (Exception e) {
 			log.error("Error during importing", e);
 			Sentry.capture(e);

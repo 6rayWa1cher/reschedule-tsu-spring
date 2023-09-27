@@ -20,6 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 public class LessonCell {
 	@Id
+	@Column(columnDefinition = "TEXT")
 	private String externalId;
 
 	@Column
@@ -30,16 +31,16 @@ public class LessonCell {
 	@Enumerated(EnumType.ORDINAL)
 	private WeekSign weekSign;
 
-	@Column
+	@Column(columnDefinition = "TEXT")
 	private String fullSubjectName;
 
-	@Column
+	@Column(columnDefinition = "TEXT")
 	private String shortSubjectName;
 
-	@Column
+	@Column(columnDefinition = "TEXT")
 	private String teacherName;
 
-	@Column
+	@Column(columnDefinition = "TEXT")
 	private String teacherTitle;
 
 	@Column
@@ -55,7 +56,7 @@ public class LessonCell {
 	@Column(name = "\"end\"")
 	private LocalTime end;
 
-	@Column
+	@Column(columnDefinition = "TEXT")
 	private String auditoryAddress;
 
 	@Column
@@ -65,7 +66,7 @@ public class LessonCell {
 	@Column
 	private Integer course;
 
-	@Column(name = "\"group\"")
+	@Column(name = "\"group\"", columnDefinition = "TEXT")
 	private String group;
 
 	@Column
@@ -77,7 +78,7 @@ public class LessonCell {
 	@Column(nullable = false, columnDefinition = "boolean default false")
 	private Boolean crossPair;
 
-	@Column(nullable = false)
+	@Column(nullable = false, columnDefinition = "TEXT")
 	private String faculty;
 
 	@ElementCollection(fetch = FetchType.EAGER)
