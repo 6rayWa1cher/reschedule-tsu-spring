@@ -143,11 +143,11 @@ public class TsuTimetableExternalModelsImporter extends AbstractExternalModelsIm
 	private Map<SelectorGroupDto, List<GroupScheduleDto>> filterSchedules(
 		Map<SelectorGroupDto, List<GroupScheduleDto>> schedules
 	) {
-		LocalDate now = LocalDate.now(clock).minusMonths(1);
+		LocalDate now = LocalDate.now(clock);
 		return EntryStream.of(schedules)
 			.mapValues(dtos ->
 				StreamEx.of(dtos)
-					.filter(dto -> dto.getStart().isBefore(now) && now.isBefore(dto.getFinish()))
+					.filter(dto -> dto.getStart().minusWeeks(3).isBefore(now) && now.isBefore(dto.getFinish()))
 					.toList()
 			)
 			.toImmutableMap();
