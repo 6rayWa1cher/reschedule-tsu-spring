@@ -38,7 +38,8 @@ public class TsuTimetableExternalModelsImporter extends AbstractExternalModelsIm
 	private final ObjectMapper objectMapper = new ObjectMapper()
 		.registerModule(new Jdk8Module())
 		.registerModule(new JavaTimeModule())
-		.enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE);
+		.enable(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE)
+		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 	private final LessonCellSynchronizationService lessonCellSynchronizationService;
 
