@@ -8,27 +8,5 @@ public class SelectorGroupDto {
 
 	private String groupName;
 
-	private Boolean shortStudy;
-
-	private Boolean individualPlan;
-
-	private Long facultyId;
-
 	private String facultyName;
-
-	private Long specialityId;
-
-	private String specialityName;
-
-	private SelectorGroupLevel levelId;
-
-	private String levelName;
-
-	private Long studyYearId;
-
-	private String studyYearName;
-
-	private String formsOfTradingId;
-
-	private String formsOfTradingName;
 }

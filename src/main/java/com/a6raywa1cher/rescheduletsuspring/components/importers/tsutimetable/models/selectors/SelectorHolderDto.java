@@ -7,6 +7,4 @@ import java.util.List;
 @Data
 public class SelectorHolderDto {
 	private List<SelectorGroupDto> groups;
-
-	private List<SelectorScheduleTypeDto> schedulesTypes;
 }

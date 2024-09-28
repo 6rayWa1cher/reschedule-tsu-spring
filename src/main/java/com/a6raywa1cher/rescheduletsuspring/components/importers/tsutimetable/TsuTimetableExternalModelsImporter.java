@@ -9,7 +9,6 @@ import com.a6raywa1cher.rescheduletsuspring.components.importers.tsutimetable.mo
 import com.a6raywa1cher.rescheduletsuspring.components.importers.tsutimetable.models.group.LessonDto;
 import com.a6raywa1cher.rescheduletsuspring.components.importers.tsutimetable.models.group.LessonTimeDto;
 import com.a6raywa1cher.rescheduletsuspring.components.importers.tsutimetable.models.selectors.SelectorGroupDto;
-import com.a6raywa1cher.rescheduletsuspring.components.importers.tsutimetable.models.selectors.SelectorGroupLevel;
 import com.a6raywa1cher.rescheduletsuspring.components.importers.tsutimetable.models.selectors.SelectorHolderDto;
 import com.a6raywa1cher.rescheduletsuspring.models.LessonCell;
 import com.a6raywa1cher.rescheduletsuspring.models.submodels.LessonCellCoordinates;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @ConditionalOnExpression("${app.tsudb.enabled:true} && '${app.tsudb.remote-type:timetable}' == 'timetable'")
@@ -60,11 +58,8 @@ public class TsuTimetableExternalModelsImporter extends AbstractExternalModelsIm
 		List<SelectorGroupDto> groups = queryAllGroups(overrideCache);
 		log.info("Found {} groups", groups.size());
 
-		List<SelectorGroupDto> filterGroups = filterGroups(groups);
-		log.info("Filtered {} groups", filterGroups.size());
-
 		Map<SelectorGroupDto, List<GroupScheduleDto>> schedules =
-			queryGroupSchedules(filterGroups, overrideCache);
+			queryGroupSchedules(groups, overrideCache);
 		log.info("Found {} schedules", schedules.size());
 
 		Map<SelectorGroupDto, List<GroupScheduleDto>> filteredSchedules =
@@ -99,15 +94,6 @@ public class TsuTimetableExternalModelsImporter extends AbstractExternalModelsIm
 		} catch (IOException e) {
 			throw new ImportException("Group load error", e);
 		}
-	}
-
-	private List<SelectorGroupDto> filterGroups(List<SelectorGroupDto> selectorGroups) {
-		return selectorGroups.stream()
-			.filter(group -> group.getLevelId() != null && !SelectorGroupLevel.UNKNOWN.equals(group.getLevelId()))
-			.filter(group -> group.getStudyYearName().matches("\\d+"))
-			.filter(group -> Boolean.FALSE.equals(group.getShortStudy()))
-			.filter(group -> Boolean.FALSE.equals(group.getIndividualPlan()))
-			.collect(Collectors.toList());
 	}
 
 	private Map<SelectorGroupDto, List<GroupScheduleDto>> queryGroupSchedules(
